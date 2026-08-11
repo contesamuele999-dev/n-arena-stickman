@@ -150,17 +150,41 @@
         }
 
         .cooldown-bar {
-            height: 3px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            margin-top: 4px;
+            height: 7px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 4px;
+            margin-top: 5px;
             overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .cooldown-fill {
             height: 100%;
             width: 0%;
-            transition: width 0.1s linear;
+            border-radius: 4px;
+            transition: width 0.15s linear;
+        }
+
+        .cooldown-fill.ready {
+            animation: pulse-ready 0.7s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse-ready {
+            from { opacity: 1; filter: brightness(1); }
+            to   { opacity: 0.7; filter: brightness(1.8) drop-shadow(0 0 4px currentColor); }
+        }
+
+        .power-ready-tag {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: blink-ready 0.6s step-end infinite;
+        }
+
+        @keyframes blink-ready {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .score-box {
@@ -1065,6 +1089,36 @@ class AudioEngine {
         osc.start(); osc.stop(this.ctx.currentTime + 0.18);
     }
 
+    playSlide() {
+        if (!this.enabled || !this.ctx) return;
+        const duration = 0.75;
+        const sampleRate = this.ctx.sampleRate;
+        const bufferSize = Math.floor(sampleRate * duration);
+        const buffer = this.ctx.createBuffer(1, bufferSize, sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        // Bandpass filter: mid-freq scraping tone
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(600, this.ctx.currentTime);
+        filter.frequency.linearRampToValueAtTime(200, this.ctx.currentTime + duration);
+        filter.Q.value = 3;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.0, this.ctx.currentTime + duration);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+        noise.stop(this.ctx.currentTime + duration);
+    }
+
     playSlash() {
         if (!this.enabled || !this.ctx) return;
         const bufferSize = this.ctx.sampleRate * 0.08;
@@ -1210,21 +1264,123 @@ class AudioEngine {
         osc.start(); osc.stop(this.ctx.currentTime + 0.12);
     }
 
+    playSuperJump() {
+        if (!this.enabled || !this.ctx) return;
+        const t = this.ctx.currentTime;
+
+        // Deep launch thud
+        const thud = this.ctx.createOscillator();
+        const thudGain = this.ctx.createGain();
+        thud.type = 'sine';
+        thud.frequency.setValueAtTime(90, t);
+        thud.frequency.exponentialRampToValueAtTime(30, t + 0.18);
+        thudGain.gain.setValueAtTime(0.7, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        thud.connect(thudGain); thudGain.connect(this.ctx.destination);
+        thud.start(t); thud.stop(t + 0.18);
+
+        // Rising power whoosh
+        const whoosh = this.ctx.createOscillator();
+        const whooshGain = this.ctx.createGain();
+        whoosh.type = 'sawtooth';
+        whoosh.frequency.setValueAtTime(200, t);
+        whoosh.frequency.exponentialRampToValueAtTime(1100, t + 0.3);
+        whooshGain.gain.setValueAtTime(0.0, t);
+        whooshGain.gain.linearRampToValueAtTime(0.32, t + 0.04);
+        whooshGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        whoosh.connect(whooshGain); whooshGain.connect(this.ctx.destination);
+        whoosh.start(t); whoosh.stop(t + 0.3);
+
+        // High air-cut noise
+        const bufSize = Math.floor(this.ctx.sampleRate * 0.15);
+        const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+        const nf = this.ctx.createBiquadFilter();
+        nf.type = 'highpass'; nf.frequency.value = 2500;
+        const ng = this.ctx.createGain();
+        ng.gain.setValueAtTime(0.22, t);
+        ng.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        noise.connect(nf); nf.connect(ng); ng.connect(this.ctx.destination);
+        noise.start(t);
+    }
+
     playBeam() {
         if (!this.enabled || !this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.35);
-        gain.gain.setValueAtTime(0.45, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(); osc.stop(this.ctx.currentTime + 0.35);
+        const t = this.ctx.currentTime;
+
+        // === LAYER 1: Deep rumbling bass explosion ===
+        const bass = this.ctx.createOscillator();
+        const bassGain = this.ctx.createGain();
+        bass.type = 'sine';
+        bass.frequency.setValueAtTime(55, t);
+        bass.frequency.exponentialRampToValueAtTime(28, t + 0.7);
+        bassGain.gain.setValueAtTime(0.0, t);
+        bassGain.gain.linearRampToValueAtTime(0.6, t + 0.04);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+        bass.connect(bassGain); bassGain.connect(this.ctx.destination);
+        bass.start(t); bass.stop(t + 0.7);
+
+        // === LAYER 2: Mid blast punch ===
+        const mid = this.ctx.createOscillator();
+        const midGain = this.ctx.createGain();
+        mid.type = 'sawtooth';
+        mid.frequency.setValueAtTime(180, t);
+        mid.frequency.exponentialRampToValueAtTime(60, t + 0.5);
+        midGain.gain.setValueAtTime(0.0, t);
+        midGain.gain.linearRampToValueAtTime(0.35, t + 0.02);
+        midGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        mid.connect(midGain); midGain.connect(this.ctx.destination);
+        mid.start(t); mid.stop(t + 0.5);
+
+        // === LAYER 3: High-pitched beam whine (energia in volo) ===
+        const beam = this.ctx.createOscillator();
+        const beamGain = this.ctx.createGain();
+        beam.type = 'sine';
+        beam.frequency.setValueAtTime(1200, t);
+        beam.frequency.linearRampToValueAtTime(900, t + 0.12);
+        beam.frequency.linearRampToValueAtTime(1050, t + 0.6);
+        beamGain.gain.setValueAtTime(0.0, t);
+        beamGain.gain.linearRampToValueAtTime(0.18, t + 0.05);
+        beamGain.gain.setValueAtTime(0.18, t + 0.45);
+        beamGain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+        beam.connect(beamGain); beamGain.connect(this.ctx.destination);
+        beam.start(t); beam.stop(t + 0.65);
+
+        // === LAYER 4: Noise burst (impatto e texture) ===
+        const bufSize = Math.floor(this.ctx.sampleRate * 0.3);
+        const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.value = 400;
+        noiseFilter.Q.value = 1.5;
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.25, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(this.ctx.destination);
+        noise.start(t);
     }
 }
 
 const audio = new AudioEngine();
+
+// Auto-init audio on first user gesture (browser autoplay policy)
+function _audioAutoInit() {
+    if (audio.enabled && !audio.ctx) {
+        audio.init();
+    }
+    document.removeEventListener('click', _audioAutoInit);
+    document.removeEventListener('keydown', _audioAutoInit);
+}
+document.addEventListener('click', _audioAutoInit);
+document.addEventListener('keydown', _audioAutoInit);
+
 function toggleAudio() {
     audio.enabled = !audio.enabled;
     if (audio.enabled) audio.init();
@@ -1435,12 +1591,9 @@ class EnergyWaveProjectile {
                 spawnParticles((tx + 0.5)*TILE, (ty + 0.5)*TILE, 15, '#ef4444');
             }
 
-            // Destroy breakable blocks (Tile 9)
+            // Destroy breakable blocks (Tile 9) silently
             if (level[ty][tx] === 9) {
-                level[ty][tx] = 0; // Destroy breakable block
-                audio.playExplosion();
-                spawnParticles((tx + 0.5)*TILE, (ty + 0.5)*TILE, 16, '#f59e0b');
-                camera.shake = Math.max(camera.shake, 6);
+                level[ty][tx] = 0;
             }
 
             // Teleport onda energetica quando colpisce i teletrasporti (Tile 5)
@@ -1465,24 +1618,34 @@ class EnergyWaveProjectile {
             }
         }
 
-        // Wall collision check (unbreakable solid wall Tile 1)
-        const checkX = this.x + (this.vx >= 0 ? this.w : 0);
-        const checkY = this.y + (this.vy >= 0 ? this.h : 0);
-        const checkTx = Math.floor(checkX / TILE);
-        const checkTy = Math.floor(checkY / TILE);
-        if (checkTx >= 0 && checkTx < levelWidth && checkTy >= 0 && checkTy < levelHeight) {
-            if (level[checkTy][checkTx] === 1) { // Unbreakable wall
-                this.explode();
-                this.life = 0;
-                return;
-            }
-        }
-        // If out of bounds, simply deactivate without explosion
-        if (checkTx < 0 || checkTx >= levelWidth || checkTy < 0 || checkTy >= levelHeight) {
+        // Collision check: sample the leading corners based on velocity direction
+        const leadX = this.vx >= 0 ? this.x + this.w : this.x;
+        const leadY = this.vy >= 0 ? this.y + this.h : this.y;
+
+        // Check horizontal leading edge only when moving horizontally
+        const hTx = Math.floor(leadX / TILE);
+        const hTy = Math.floor((this.y + this.h / 2) / TILE);
+        // Check vertical leading edge only when moving vertically
+        const vTx = Math.floor((this.x + this.w / 2) / TILE);
+        const vTy = Math.floor(leadY / TILE);
+
+        const hitH = Math.abs(this.vx) > 0.5
+            && hTx >= 0 && hTx < levelWidth && hTy >= 0 && hTy < levelHeight
+            && level[hTy][hTx] === 1;
+        const hitV = Math.abs(this.vy) > 0.5
+            && vTx >= 0 && vTx < levelWidth && vTy >= 0 && vTy < levelHeight
+            && level[vTy][vTx] === 1;
+
+        if (hitH || hitV) {
+            this.explode();
             this.life = 0;
             return;
         }
-        if (solidAt(checkX, checkY)) {
+
+        // Out of bounds: deactivate silently
+        const midTx = Math.floor((this.x + this.w / 2) / TILE);
+        const midTy = Math.floor((this.y + this.h / 2) / TILE);
+        if (midTx < 0 || midTx >= levelWidth || midTy < 0 || midTy >= levelHeight) {
             this.life = 0;
             return;
         }
@@ -1694,14 +1857,14 @@ class Player {
                 this.isSliding = true;
                 this.h = 12;
                 this.y += 10;
-                audio.playDash();
+                audio.playSlide();
                 spawnParticles(this.x + this.w/2, this.y + this.h, 6, '#38bdf8');
             }
         }
 
         if (this.isSliding) {
             // Decelerazione graduale e naturale della scivolata (attrito dinamico)
-            this.vx *= 0.97; // slower deceleration for longer slide
+            this.vx *= 0.985; // very slow deceleration for long slide
 
             // Scia di polvere durante la scivolata
             if (Math.abs(this.vx) > 0.8 && Math.random() < 0.6) {
@@ -1709,7 +1872,7 @@ class Player {
             }
 
             // Esaurimento naturale della scivolata o rilascio tasto (con controllo soffitto soffice)
-            if (Math.abs(this.vx) < 0.2 || !this.onGround) { // lower threshold to keep sliding
+            if (Math.abs(this.vx) < 0.12 || !this.onGround) { // very low threshold = longer slide
                 if (!solidAt(this.x, this.y - 10) && !solidAt(this.x + this.w, this.y - 10)) {
                     this.isSliding = false;
                     this.h = 22;
@@ -1760,7 +1923,7 @@ class Player {
             const boostRatio = Math.min(this.jumpCharge, 120) / 120;
             this.vy = JUMP - (boostRatio * BOOST_MULTIPLIER);
             this.chargedJumpTime = 6;
-            audio.playJump();
+            audio.playSuperJump();
             camera.shake = Math.max(camera.shake, Math.floor(boostRatio * 4));
             spawnParticles(this.x + this.w/2, this.y + this.h, Math.floor(8 + boostRatio * 8), '#00f0ff');
             this.jumpCharge = 0;
@@ -2255,6 +2418,43 @@ class Player {
             ctx.restore();
         }
 
+        // Draw Power (Dash/etc) cooldown bar above head
+        {
+            const pwr = POWERS[this.powerType];
+            const cdPct = pwr ? Math.min(1, (pwr.cd - this.cooldown) / pwr.cd) : 1;
+            const barW = 34;
+            const barH = 4;
+            const bx = Math.floor(this.x + this.w/2 - barW/2 - camera.x);
+            const by = Math.floor(this.y - 23 - camera.y); // above energy bar
+
+            ctx.save();
+            // Background track
+            ctx.fillStyle = 'rgba(10, 14, 28, 0.8)';
+            ctx.fillRect(bx, by, barW, barH);
+
+            // Fill
+            const ready = cdPct >= 1;
+            ctx.fillStyle = ready ? this.config.color : 'rgba(180,180,200,0.5)';
+            ctx.shadowColor = ready ? this.config.color : 'transparent';
+            ctx.shadowBlur = ready ? 8 : 0;
+            ctx.fillRect(bx, by, barW * cdPct, barH);
+
+            // Border
+            ctx.strokeStyle = ready ? this.config.color : 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx, by, barW, barH);
+
+            // "READY" flash dot when charged
+            if (ready && Math.floor(gameTime / 8) % 2 === 0) {
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = this.config.color;
+                ctx.shadowBlur = 6;
+                ctx.fillRect(bx + barW + 2, by, 3, barH);
+            }
+
+            ctx.restore();
+        }
+
         this.scarf.draw(camera);
 
         ctx.save();
@@ -2312,6 +2512,7 @@ class Player {
             const pct = this.jumpCharge / 100;
             const cx = this.w / 2;
 
+            // Ground aura stays at feet
             ctx.strokeStyle = '#00f0ff';
             ctx.shadowColor = '#00f0ff';
             ctx.shadowBlur = 12 * pct;
@@ -2320,17 +2521,23 @@ class Player {
             ctx.ellipse(cx, this.h + 1, 9 * pct, 3 * pct, 0, 0, Math.PI * 2);
             ctx.stroke();
 
-            const barW = 18;
-            const barH = 3.5;
-            const bx = cx - barW / 2;
-            const by = -12;
+            // Bar drawn on right side of player, vertical
+            const barH = 22; // full player height
+            const barW = 3.5;
+            const bx = this.w + 4; // just to the right
+            const by = 0;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             ctx.fillRect(bx - 1, by - 1, barW + 2, barH + 2);
-            ctx.fillStyle = '#00f0ff';
-            ctx.fillRect(bx, by, barW * pct, barH);
+            // fill from bottom up
+            const fillH = barH * pct;
+            ctx.fillStyle = pct >= 1 ? '#facc15' : '#00f0ff';
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.shadowBlur = 6 * pct;
+            ctx.fillRect(bx, by + barH - fillH, barW, fillH);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.lineWidth = 0.8;
             ctx.strokeRect(bx, by, barW, barH);
+
         }
 
         ctx.restore();
@@ -3245,15 +3452,24 @@ function updateHUD() {
             </div>
             <div class="hp-bar" style="color:${p.config.color}">${hpDots}</div>
             <div class="power-info">
-                <span>${POWERS[p.powerType].name}</span>
-                <span>${cdPct >= 100 ? 'PRONTO' : Math.ceil((POWERS[p.powerType].cd - p.cooldown)/60) + 's'}</span>
+                <span>⚡ ${POWERS[p.powerType].name}</span>
+                ${cdPct >= 100
+                    ? `<span class="power-ready-tag" style="color:${p.config.color}">▶ PRONTO</span>`
+                    : `<span style="opacity:0.7">${Math.ceil((POWERS[p.powerType].cd - p.cooldown)/60)}s</span>`
+                }
             </div>
-            <div class="cooldown-bar"><div class="cooldown-fill" style="width:${cdPct}%; background:${p.config.color}"></div></div>
-            <div class="cooldown-bar" style="margin-top: 4px; height: 4px; background: rgba(0,0,0,0.4);">
-                <div class="cooldown-fill" style="width:${p.energy}%; background:${p.energy >= 100 ? '#22c55e' : wInfo.color}"></div>
+            <div class="cooldown-bar">
+                <div class="cooldown-fill ${cdPct >= 100 ? 'ready' : ''}" style="width:${cdPct}%; background:${p.config.color}; box-shadow:${cdPct >= 100 ? `0 0 6px ${p.config.color}` : 'none'}"></div>
             </div>
-            <div style="font-size:9px; font-weight:800; text-align:right; margin-top:2px; color:${p.energy >= 100 ? '#22c55e' : '#cbd5e1'}">
-                ONDA: ${p.energy >= 100 ? '⚡ PRONTA' : Math.floor(p.energy) + '%'}
+            <div class="power-info" style="margin-top:5px">
+                <span>🌊 ${wInfo.name || 'ONDA'}</span>
+                ${p.energy >= 100
+                    ? `<span class="power-ready-tag" style="color:${wInfo.color}">▶ PRONTA</span>`
+                    : `<span style="opacity:0.7">${Math.floor(p.energy)}%</span>`
+                }
+            </div>
+            <div class="cooldown-bar" style="margin-top:0">
+                <div class="cooldown-fill ${p.energy >= 100 ? 'ready' : ''}" style="width:${p.energy}%; background:${p.energy >= 100 ? '#22c55e' : wInfo.color}; box-shadow:${p.energy >= 100 ? `0 0 6px ${wInfo.color}` : 'none'}"></div>
             </div>
             <div class="score-box">
                 <span>${gameMode === 'rush' ? 'MONETE' : 'UCCISIONI'}: ${p.score}</span>
