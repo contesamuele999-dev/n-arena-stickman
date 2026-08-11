@@ -7,10 +7,14 @@ echo   N+ Arena Stickman - GitHub ^& GitHub Pages Auto Deployer
 echo ========================================================
 echo.
 
-:: 1. Assicura che index.html sia sincronizzato con n_arena_stickman.html
+:: 1. Assicura che index.html e .nojekyll siano presenti e sincronizzati
 if exist "n_arena_stickman.html" (
     echo [1/5] Sincronizzazione di index.html...
     copy /Y "n_arena_stickman.html" "index.html" >nul
+)
+
+if not exist ".nojekyll" (
+    echo # Disable Jekyll > .nojekyll
 )
 
 :: 2. Inizializza Git se non presente
@@ -70,7 +74,7 @@ echo Repository GitHub:
 echo https://github.com/!GH_USER!/n-arena-stickman
 echo.
 echo Gioco Online su GitHub Pages:
-echo https://contesamuele999-dev.github.io/n-arena-stickman/
+echo https://!GH_USER!.github.io/n-arena-stickman/
 echo ========================================================
 echo.
 pause
