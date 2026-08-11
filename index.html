@@ -269,21 +269,20 @@
             pointer-events: none;
         }
 
-        /* TOUCHSCREEN CONTROLS (AUTO-DETECTED ON SMARTPHONE/TABLET) */
+        /* CONTROLLI TOUCHSCREEN ESTERNI (POSIZIONATI FUORI DALLA SCHERMATA DEL GIOCO) */
         #touchControls {
-            position: absolute;
-            bottom: 14px;
-            left: 0;
-            width: 100%;
-            padding: 0 16px;
+            background: rgba(11, 13, 20, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            width: 960px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            pointer-events: none;
-            z-index: 15;
+            align-items: center;
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+            z-index: 10;
         }
 
         #touchControls.hidden {
@@ -800,23 +799,6 @@
                 <div id="countdown"></div>
             </div>
 
-            <!-- CONTROLLI TOUCHSCREEN SULLO SCHERMO (ATTIVI SU SMARTPHONE/TABLET O SE ATTIVATI) -->
-            <div id="touchControls" class="hidden">
-                <div class="touch-dpad">
-                    <div class="touch-btn" id="btnTouchLeft" style="grid-column: 1; grid-row: 2;">◀</div>
-                    <div class="touch-btn" id="btnTouchDown" style="grid-column: 2; grid-row: 2;">▼</div>
-                    <div class="touch-btn" id="btnTouchRight" style="grid-column: 3; grid-row: 2;">▶</div>
-                </div>
-
-                <div class="touch-actions">
-                    <div class="touch-btn touch-btn-action touch-btn-charge" id="btnTouchCharge">🔋</div>
-                    <div class="touch-btn touch-btn-action touch-btn-wave" id="btnTouchWave">💥</div>
-                    <div class="touch-btn touch-btn-action touch-btn-atk" id="btnTouchAtk">⚔️</div>
-                    <div class="touch-btn touch-btn-action" id="btnTouchPow">⚡</div>
-                    <div class="touch-btn touch-btn-action touch-btn-jump" id="btnTouchJump">▲</div>
-                </div>
-            </div>
-
             <!-- MENU PRINCIPALE -->
             <div id="menu" class="overlay">
                 <h1>N+ ARENA</h1>
@@ -972,6 +954,23 @@
                     <button class="btn" onclick="nextCampaignLevel()">🚀 Prossimo Livello</button>
                     <button class="btn btn-secondary" onclick="showCampaignSelect()">📋 Selezione Livelli</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- CONTROLLI TOUCHSCREEN ESTERNI (POSIZIONATI FUORI DALLA SCHERMATA DEL GIOCO) -->
+        <div id="touchControls" class="hidden">
+            <div class="touch-dpad">
+                <div class="touch-btn" id="btnTouchLeft" style="grid-column: 1; grid-row: 2;">◀</div>
+                <div class="touch-btn" id="btnTouchDown" style="grid-column: 2; grid-row: 2;">▼</div>
+                <div class="touch-btn" id="btnTouchRight" style="grid-column: 3; grid-row: 2;">▶</div>
+            </div>
+
+            <div class="touch-actions">
+                <div class="touch-btn touch-btn-action touch-btn-charge" id="btnTouchCharge">🔋</div>
+                <div class="touch-btn touch-btn-action touch-btn-wave" id="btnTouchWave">💥</div>
+                <div class="touch-btn touch-btn-action touch-btn-atk" id="btnTouchAtk">⚔️</div>
+                <div class="touch-btn touch-btn-action" id="btnTouchPow">⚡</div>
+                <div class="touch-btn touch-btn-action touch-btn-jump" id="btnTouchJump">▲</div>
             </div>
         </div>
     </div>
