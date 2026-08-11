@@ -76,10 +76,14 @@
 
         .hud {
             display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            width: 100%;
             align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .hud.hidden {
+            display: none !important;
         }
 
         .playerHud {
@@ -177,6 +181,10 @@
             gap: 8px;
             margin-right: 8px;
             min-width: 0;
+        }
+
+        .campaign-hud-box.hidden {
+            display: none !important;
         }
 
         .campaign-stat {
@@ -443,9 +451,14 @@
             transition: opacity 0.3s ease;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         .overlay.hidden {
             opacity: 0;
             pointer-events: none;
+            display: none !important;
         }
 
         h1 {
