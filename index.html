@@ -201,6 +201,23 @@
             white-space: nowrap;
             flex-shrink: 0;
             height: 26px;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+
+        #campTimeStat {
+            min-width: 115px;
+            justify-content: center;
+        }
+
+        #campGoldStat {
+            min-width: 110px;
+            justify-content: center;
+        }
+
+        #campLevelTitle {
+            min-width: 180px;
+            justify-content: center;
         }
 
         .switch-status {
@@ -262,6 +279,11 @@
             display: flex;
             gap: 8px;
             align-items: center;
+            min-width: 120px;
+            justify-content: center;
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
         }
 
         #countdown {
@@ -833,14 +855,15 @@
                 </div>
 
                 <div class="controls-card">
-                    <h3>Fisica N+ Originale: Rincorsa, Inerzia & Scivolata</h3>
+                    <h3>🎮 Guida ai Comandi & Abilità Ninja</h3>
                     <div class="controls-grid">
                         <div><strong>Muoviti / Rincorsa:</strong> Freccie Sinistra/Destra (o WASD)</div>
-                        <div><strong>Salto / Salto Muro:</strong> Freccia Su (o W)</div>
+                        <div><strong>Salto / Scalata Muri:</strong> Freccia Su (o W)</div>
+                        <div><strong>Salto Caricato:</strong> Tieni premuto Giù (S) a terra per caricare, poi RILASCIALO per saltare! 🚀</div>
                         <div><strong>Scivolata a Terra:</strong> Corsa + Freccia Giù (o S)</div>
-                        <div><strong>Scivolata Parete:</strong> Cling al muro + Giù per accelerare</div>
-                        <div><strong>Attacco Katana:</strong> Tasto M (o F)</div>
-                        <div><strong>Abilità Speciale:</strong> Tasto N (o G)</div>
+                        <div><strong>Attacco Katana Direzionale:</strong> Su / Giù / Avanti + Tasto M (o F)</div>
+                        <div><strong>Onda Energetica Direzionale:</strong> Carica Tasto C, Spara V (o J) + Direzione (Su/Giù/Avanti)!</div>
+                        <div><strong>Fisica & Portali:</strong> L'Onda si teletrasporta nei portali e distrugge i blocchi crepati!</div>
                     </div>
                 </div>
             </div>
@@ -965,6 +988,16 @@
                 <div style="font-size: 24px; color: #f59e0b; margin-bottom: 24px;" id="campaignStarsText">⭐⭐⭐</div>
                 <div class="btn-group">
                     <button class="btn" onclick="nextCampaignLevel()">🚀 Prossimo Livello</button>
+                    <button class="btn btn-secondary" onclick="showCampaignSelect()">📋 Selezione Livelli</button>
+                </div>
+            </div>
+
+            <!-- FAIL OVERLAY CAMPAGNA -->
+            <div id="campaignFailModal" class="overlay hidden">
+                <h1 style="color: #ef4444;">💀 LIVELLO FALLITO!</h1>
+                <p id="campaignFailSub" style="color: #94a3b8; font-size: 16px; margin-bottom: 20px;">Sei morto prima di attraversare il Portale d'Uscita!</p>
+                <div class="btn-group">
+                    <button class="btn" onclick="restartGame()">🔄 Riprova Livello</button>
                     <button class="btn btn-secondary" onclick="showCampaignSelect()">📋 Selezione Livelli</button>
                 </div>
             </div>
@@ -1355,10 +1388,9 @@ class Scarf {
 // RANGED ENERGY WAVE PROJECTILE CLASS
 // ==========================================
 class EnergyWaveProjectile {
-    constructor(x, y, facing, ownerId, waveType) {
+    constructor(x, y, dirX, dirY, ownerId, waveType) {
         this.x = x;
         this.y = y;
-        this.facing = facing;
         this.ownerId = ownerId;
         this.type = waveType || 'kame';
         const info = ENERGY_WAVES[this.type] || ENERGY_WAVES.kame;
@@ -1368,28 +1400,82 @@ class EnergyWaveProjectile {
         this.color = info.color;
         this.life = 120;
         this.hitPlayers = [];
+        this.teleportCooldown = 0;
+
+        const len = Math.hypot(dirX, dirY) || 1;
+        this.dirX = dirX / len;
+        this.dirY = dirY / len;
+        this.vx = this.dirX * this.speed;
+        this.vy = this.dirY * this.speed;
     }
 
     update() {
         this.life--;
-        this.x += this.facing * this.speed;
+        if (this.teleportCooldown > 0) this.teleportCooldown--;
+
+        this.x += this.vx;
+        this.y += this.vy;
 
         // Particle trail
         if (Math.random() < 0.7) {
             spawnParticles(this.x + this.w/2, this.y + this.h/2, 2, this.color);
         }
 
-        // Destroy mine traps
-        const tx = Math.floor((this.x + this.w/2) / TILE);
-        const ty = Math.floor((this.y + this.h/2) / TILE);
-        if (tx >= 0 && tx < levelWidth && ty >= 0 && ty < levelHeight && level[ty][tx] === 2) {
-            level[ty][tx] = 0; // Destroy mine
-            audio.playExplosion();
-            spawnParticles((tx + 0.5)*TILE, (ty + 0.5)*TILE, 15, '#ef4444');
+        const cx = this.x + this.w / 2;
+        const cy = this.y + this.h / 2;
+        const tx = Math.floor(cx / TILE);
+        const ty = Math.floor(cy / TILE);
+
+        if (tx >= 0 && tx < levelWidth && ty >= 0 && ty < levelHeight) {
+            // Destroy mine traps (Tile 2)
+            if (level[ty][tx] === 2) {
+                level[ty][tx] = 0; // Destroy mine
+                audio.playExplosion();
+                spawnParticles((tx + 0.5)*TILE, (ty + 0.5)*TILE, 15, '#ef4444');
+            }
+
+            // Destroy breakable blocks (Tile 9)
+            if (level[ty][tx] === 9) {
+                level[ty][tx] = 0; // Destroy breakable block
+                audio.playExplosion();
+                spawnParticles((tx + 0.5)*TILE, (ty + 0.5)*TILE, 16, '#f59e0b');
+                camera.shake = Math.max(camera.shake, 6);
+            }
+
+            // Teleport onda energetica quando colpisce i teletrasporti (Tile 5)
+            if (level[ty][tx] === 5 && this.teleportCooldown <= 0) {
+                const dests = [];
+                for (let ly = 0; ly < levelHeight; ly++) {
+                    for (let lx = 0; lx < levelWidth; lx++) {
+                        if (level[ly][lx] === 5 && (lx !== tx || ly !== ty)) {
+                            dests.push({ x: lx, y: ly });
+                        }
+                    }
+                }
+                if (dests.length > 0) {
+                    const dest = dests[Math.floor(Math.random() * dests.length)];
+                    spawnParticles(cx, cy, 15, '#a855f7');
+                    this.x = dest.x * TILE + (TILE - this.w) / 2;
+                    this.y = dest.y * TILE + (TILE - this.h) / 2;
+                    this.teleportCooldown = 25;
+                    audio.playTeleport();
+                    spawnParticles(this.x + this.w/2, this.y + this.h/2, 15, '#a855f7');
+                }
+            }
         }
 
-        // Wall collision check
-        if (solidAt(this.x + (this.facing > 0 ? this.w : 0), this.y + this.h/2)) {
+        // Wall collision check (unbreakable solid wall Tile 1)
+        const checkX = this.x + (this.vx >= 0 ? this.w : 0);
+        const checkY = this.y + (this.vy >= 0 ? this.h : 0);
+        const checkTx = Math.floor(checkX / TILE);
+        const checkTy = Math.floor(checkY / TILE);
+        if (checkTx >= 0 && checkTx < levelWidth && checkTy >= 0 && checkTy < levelHeight) {
+            if (level[checkTy][checkTx] === 1) { // Unbreakable wall
+                this.explode();
+                this.life = 0;
+                return;
+            }
+        } else if (solidAt(checkX, checkY)) {
             this.explode();
             this.life = 0;
             return;
@@ -1401,7 +1487,8 @@ class EnergyWaveProjectile {
                 if (rectIntersect(this, p)) {
                     const owner = players.find(pl => pl.id === this.ownerId);
                     p.takeHit(owner, 2);
-                    p.vx += this.facing * 9; // Knockback impulse
+                    p.vx += this.dirX * 9; // Knockback impulse
+                    p.vy += this.dirY * 9;
                     this.hitPlayers.push(p.id);
                     this.explode();
                     if (this.type !== 'kame') this.life = 0; // Kame-blast pierces, others detonate!
@@ -1418,22 +1505,26 @@ class EnergyWaveProjectile {
 
     draw() {
         ctx.save();
+        const cx = this.x + this.w/2 - camera.x;
+        const cy = this.y + this.h/2 - camera.y;
+
+        ctx.translate(cx, cy);
+        const angle = Math.atan2(this.dirY, this.dirX);
+        ctx.rotate(angle);
+
         ctx.fillStyle = this.color;
         ctx.shadowColor = this.color;
         ctx.shadowBlur = 20;
 
-        const cx = this.x + this.w/2 - camera.x;
-        const cy = this.y + this.h/2 - camera.y;
-
         ctx.beginPath();
         if (this.type === 'kame') {
-            ctx.ellipse(cx, cy, this.w/2, this.h/3, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, this.w/2, this.h/3, 0, 0, Math.PI * 2);
         } else if (this.type === 'inferno') {
-            ctx.arc(cx, cy, this.w/2, 0, Math.PI * 2);
+            ctx.arc(0, 0, this.w/2, 0, Math.PI * 2);
         } else if (this.type === 'void') {
-            ctx.arc(cx, cy, this.w/2, 0, Math.PI * 2);
+            ctx.arc(0, 0, this.w/2, 0, Math.PI * 2);
         } else {
-            ctx.rect(this.x - camera.x, this.y + 6 - camera.y, this.w * 1.6, 10);
+            ctx.rect(-this.w/2, -5, this.w * 1.6, 10);
         }
         ctx.fill();
         ctx.restore();
@@ -1493,6 +1584,7 @@ class Player {
         this.h = 22;
         this.energy = 0;
         this.isCharging = false;
+        this.jumpCharge = 0;
     }
 
     update() {
@@ -1584,9 +1676,9 @@ class Player {
             this.isCharging = false;
         }
 
-        // FIRE ENERGY WAVE ("SPARA ONDA ENERGETICA")
+        // FIRE ENERGY WAVE ("SPARA ONDA ENERGETICA DIREZIONALE")
         if (inputWave && !this.waveHeld) {
-            this.fireEnergyWave();
+            this.fireEnergyWave(inputJump, inputDown, inputX);
         }
         this.waveHeld = inputWave;
 
@@ -1648,13 +1740,35 @@ class Player {
             spawnParticles(this.x + (this.vx > 0 ? 0 : this.w), this.y + this.h, 1, '#38bdf8');
         }
 
-        // Jump / Wall Jump with N+ physics
+        // SALTO CARICATO (TIENI PREMUTO GIÙ E RILASCIA PER IL SUPER SALTO)
+        if (this.onGround && inputDown && !this.isSliding) {
+            this.jumpCharge = Math.min(100, (this.jumpCharge || 0) + 2.5);
+            if (Math.random() < 0.4) {
+                spawnParticles(this.x + Math.random() * this.w, this.y + this.h, 1, '#00f0ff');
+            }
+        }
+
+        // Lancio del Salto Caricato semplicemente RILASCIANDO il tasto GIÙ!
+        if (this.onGround && !inputDown && this.jumpCharge >= 15) {
+            const boostRatio = this.jumpCharge / 100;
+            this.vy = JUMP - (boostRatio * 6.0);
+            this.chargedJumpTime = 6;
+            audio.playJump();
+            camera.shake = Math.max(camera.shake, Math.floor(boostRatio * 4));
+            spawnParticles(this.x + this.w/2, this.y + this.h, Math.floor(8 + boostRatio * 8), '#00f0ff');
+            this.jumpCharge = 0;
+        } else if (!inputDown && !inputJump) {
+            if (this.jumpCharge > 0) this.jumpCharge = Math.max(0, this.jumpCharge - 5);
+        }
+
+        // Standard Jump / Wall Jump (Tasto SU / Freccia Su)
         if (inputJump) {
             if (!this.jumpHeld) {
                 if (this.onGround) {
                     this.vy = JUMP;
                     audio.playJump();
                     spawnParticles(this.x + this.w/2, this.y + this.h, 6, this.config.color);
+                    this.jumpCharge = 0;
                 } else if (this.onWall !== 0) {
                     // Dynamic N+ Wall Jump & Wall Scaling ("Arrampicata sul Muro")
                     const holdingWall = (this.onWall === 1 && inputX < 0) || (this.onWall === -1 && inputX > 0);
@@ -1669,12 +1783,16 @@ class Player {
             this.jumpHeld = true;
         } else {
             this.jumpHeld = false;
-            if (this.vy < 0) this.vy *= 0.84; // Variable jump height
+            if (this.chargedJumpTime > 0) {
+                this.chargedJumpTime--;
+            } else if (this.vy < 0) {
+                this.vy *= 0.84; // Variable jump height
+            }
         }
 
-        // Attack trigger
+        // Attack trigger (Attacco Direzionale: Su, Giù, Avanti)
         if (inputAtk && !this.atkHeld && this.atkCooldown <= 0) {
-            this.attack();
+            this.attack(inputJump, inputDown, inputX);
         }
         this.atkHeld = inputAtk;
 
@@ -1713,15 +1831,50 @@ class Player {
         // Attack box update & collision check
         if (this.atkTimer > 0) {
             this.atkTimer--;
-            this.atkBox = {
-                x: this.x + (this.facing > 0 ? this.w : -20),
-                y: this.y - 2,
-                w: 22, h: 26
-            };
+            if (this.atkDir === 'up') {
+                this.atkBox = {
+                    x: this.x - 6,
+                    y: this.y - 24,
+                    w: this.w + 12,
+                    h: 26
+                };
+            } else if (this.atkDir === 'down') {
+                this.atkBox = {
+                    x: this.x - 6,
+                    y: this.y + this.h - 2,
+                    w: this.w + 12,
+                    h: 26
+                };
+            } else {
+                this.atkBox = {
+                    x: this.x + (this.facing > 0 ? this.w : -20),
+                    y: this.y - 2,
+                    w: 22, h: 26
+                };
+            }
+
             for (let p of players) {
                 if (p !== this && p.alive && !this.hitPlayers.includes(p.id) && rectIntersect(this.atkBox, p)) {
                     p.takeHit(this, 1);
+                    if (this.atkDir === 'up') p.vy = -6; // Upward launch!
+                    else if (this.atkDir === 'down') p.vy = 8; // Downward spike!
                     this.hitPlayers.push(p.id);
+                }
+            }
+
+            // Distruzione blocchi rompibili (Tile 9)
+            const startTx = Math.floor(this.atkBox.x / TILE);
+            const endTx = Math.floor((this.atkBox.x + this.atkBox.w) / TILE);
+            const startTy = Math.floor(this.atkBox.y / TILE);
+            const endTy = Math.floor((this.atkBox.y + this.atkBox.h) / TILE);
+            for (let tx = startTx; tx <= endTx; tx++) {
+                for (let ty = startTy; ty <= endTy; ty++) {
+                    if (tx >= 0 && tx < levelWidth && ty >= 0 && ty < levelHeight && level[ty][tx] === 9) {
+                        level[ty][tx] = 0; // Destroy breakable block!
+                        audio.playExplosion();
+                        spawnParticles((tx + 0.5) * TILE, (ty + 0.5) * TILE, 12, '#f59e0b');
+                        camera.shake = Math.max(camera.shake, 5);
+                    }
                 }
             }
         } else {
@@ -1903,12 +2056,29 @@ class Player {
         }
     }
 
-    attack() {
+    attack(inputUp = false, inputDown = false, inputX = 0) {
         this.atkTimer = 14;
-        this.atkCooldown = 22;
+        this.atkCooldown = 20;
         this.hitPlayers = [];
+
+        if (inputUp) {
+            this.atkDir = 'up';
+        } else if (inputDown) {
+            this.atkDir = 'down';
+        } else {
+            this.atkDir = 'forward';
+            if (inputX !== 0) this.facing = inputX;
+        }
+
         audio.playSlash();
-        spawnParticles(this.x + this.w/2 + this.facing*16, this.y + 8, 4, '#ffffff');
+
+        let px = this.x + this.w/2;
+        let py = this.y + 8;
+        if (this.atkDir === 'up') py = this.y - 10;
+        else if (this.atkDir === 'down') py = this.y + this.h + 8;
+        else px += this.facing * 16;
+
+        spawnParticles(px, py, 4, '#ffffff');
     }
 
     usePower() {
@@ -1952,21 +2122,38 @@ class Player {
         }
     }
 
-    fireEnergyWave() {
+    fireEnergyWave(inputUp = false, inputDown = false, inputX = 0) {
         if (this.energy < 100 || !this.alive) return;
         this.energy = 0;
         audio.playBeam();
         camera.shake = 16;
         slowMoTimer = 6;
 
-        this.vx -= this.facing * 6.5; // Recoil
+        let dirX = inputX;
+        let dirY = 0;
+        if (inputUp) dirY = -1;
+        else if (inputDown) dirY = 1;
+
+        if (dirX === 0 && dirY === 0) dirX = this.facing;
+
+        const len = Math.hypot(dirX, dirY) || 1;
+        dirX /= len;
+        dirY /= len;
+
+        // Recoil oposto alla direzione del colpo (Rocket Jump se sparato in basso!)
+        this.vx -= dirX * 6.5;
+        this.vy -= dirY * 6.5;
 
         const wInfo = ENERGY_WAVES[this.energyWaveType] || ENERGY_WAVES.kame;
 
+        const spawnX = this.x + this.w/2 + dirX * 22 - 14;
+        const spawnY = this.y + this.h/2 + dirY * 22 - 14;
+
         projectiles.push(new EnergyWaveProjectile(
-            this.x + (this.facing > 0 ? this.w + 4 : -32),
-            this.y + this.h/2 - 14,
-            this.facing,
+            spawnX,
+            spawnY,
+            dirX,
+            dirY,
             this.id,
             this.energyWaveType
         ));
@@ -2010,8 +2197,14 @@ class Player {
             killer.kills++;
             killer.score++;
         }
-        this.respawnTimer = gameMode === 'campaign' ? 90 : 120;
-        checkWinCondition();
+        if (gameMode === 'campaign') {
+            setTimeout(() => {
+                showCampaignFailedModal();
+            }, 750);
+        } else {
+            this.respawnTimer = 120;
+            checkWinCondition();
+        }
     }
 
     respawn() {
@@ -2091,14 +2284,46 @@ class Player {
 
         this.drawStickmanPose(this.animState, f);
 
-        // Katana Attack Slash
+        // Katana Attack Slash (Direzionale: Su, Giù, Avanti)
         if (this.atkTimer > 0) {
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 3;
             ctx.beginPath();
             const progress = 1 - (this.atkTimer / 14);
-            ctx.arc(this.w/2 + f*10, 10, 16, (f > 0 ? -0.8 : 2.2) + progress*0.5, (f > 0 ? 0.8 : 3.8) + progress*0.5);
+            if (this.atkDir === 'up') {
+                ctx.arc(this.w/2, -6, 18, -Math.PI*0.8 + progress*0.6, -Math.PI*0.2 + progress*0.6);
+            } else if (this.atkDir === 'down') {
+                ctx.arc(this.w/2, this.h + 6, 18, Math.PI*0.2 + progress*0.6, Math.PI*0.8 + progress*0.6);
+            } else {
+                ctx.arc(this.w/2 + f*10, 10, 16, (f > 0 ? -0.8 : 2.2) + progress*0.5, (f > 0 ? 0.8 : 3.8) + progress*0.5);
+            }
             ctx.stroke();
+        }
+
+        // Charged Jump Aura & Bar Indicator
+        if (this.jumpCharge > 5) {
+            const pct = this.jumpCharge / 100;
+            const cx = this.w / 2;
+
+            ctx.strokeStyle = '#00f0ff';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 12 * pct;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(cx, this.h + 1, 9 * pct, 3 * pct, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            const barW = 18;
+            const barH = 3.5;
+            const bx = cx - barW / 2;
+            const by = -12;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(bx - 1, by - 1, barW + 2, barH + 2);
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(bx, by, barW * pct, barH);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 0.8;
+            ctx.strokeRect(bx, by, barW, barH);
         }
 
         ctx.restore();
@@ -2136,6 +2361,12 @@ class Player {
             torsoBot = { x: cx + 3, y: 9 };
             lArm = { x: cx - 6, y: 8 }; rArm = { x: cx + 2, y: 7 };
             lLeg = { x: cx - 6, y: 11 }; rLeg = { x: cx + 6, y: 11 };
+        } else if (this.jumpCharge > 10 && this.onGround) {
+            // Crouching charge jump pose
+            torsoTop = { x: cx, y: 12 };
+            torsoBot = { x: cx, y: 16 };
+            lArm = { x: cx - 5, y: 14 }; rArm = { x: cx + 5, y: 14 };
+            lLeg = { x: cx - 5, y: 21 }; rLeg = { x: cx + 5, y: 21 };
         } else if (state === 'run') {
             torsoTop = { x: cx, y: 8 + bob };
             torsoBot = { x: cx, y: 13 + bob };
@@ -2398,7 +2629,7 @@ const CAMPAIGN_LEVELS = [
     {
         id: 7,
         title: "07. Torri Gemelle N+",
-        desc: "Attraversa il teletrasporto per raggiungere la torre opposta.",
+        desc: "Usa l'attacco o l'onda per rompere i blocchi crepati e scalare la torre verso l'interruttore!",
         parTime: 32,
         spawn: { x: 4 * TILE, y: 16 * TILE },
         build: (map) => {
@@ -2416,10 +2647,15 @@ const CAMPAIGN_LEVELS = [
             // Teleport (Tile 5)
             map[17][10] = 5; map[17][29] = 5;
 
+            // Blocchi distruttibili (Tile 9) per scalare le torri
+            map[12][30] = 9; map[12][31] = 9; map[12][32] = 9; // Soffitto rompibile piano 1 torre destra
+            map[6][31] = 9; map[6][32] = 9; map[6][33] = 9;   // Soffitto rompibile piano 2 torre destra
+            map[12][4] = 9; map[12][5] = 9;                  // Blocchi rompibili torre sinistra
+
             map[5][32] = 6; // Switch su Torre Destra
             map[17][4] = 7;  // Exit Door su Torre Sinistra
 
-            map[11][7] = 8; map[11][32] = 8;
+            map[11][7] = 8; map[11][32] = 8; map[5][31] = 8; map[5][33] = 8;
         }
     },
     {
@@ -2448,7 +2684,7 @@ const CAMPAIGN_LEVELS = [
     {
         id: 9,
         title: "09. La Fortezza delle Trappole",
-        desc: "Combina scivolate a parete, salti e disattivazione mine.",
+        desc: "Combina scivolate a parete, salti e distruggi i blocchi crepati con l'attacco.",
         parTime: 35,
         spawn: { x: 3 * TILE, y: 17 * TILE },
         build: (map) => {
@@ -2458,7 +2694,7 @@ const CAMPAIGN_LEVELS = [
             for (let x = 1; x < levelWidth-1; x++) map[19][x] = 1;
 
             for (let x = 6; x <= 34; x += 7) {
-                for (let y = 8; y <= 18; y++) map[y][x] = 1;
+                for (let y = 8; y <= 18; y++) map[y][x] = (y === 14 ? 9 : 1); // Blocco rompibile in ciascuna parete
             }
 
             map[18][10] = 2; map[18][17] = 2; map[18][24] = 2; map[18][31] = 2;
@@ -2481,9 +2717,9 @@ const CAMPAIGN_LEVELS = [
 
             for (let x = 1; x < levelWidth-1; x++) map[19][x] = 1;
 
-            // Architettura finale complessa
+            // Architettura finale complessa con blocchi distruttibili
             for (let x = 8; x <= 32; x += 8) {
-                for (let y = 5; y <= 15; y++) map[y][x] = 1;
+                for (let y = 5; y <= 15; y++) map[y][x] = (y === 10 ? 9 : 1);
             }
 
             for (let x = 4; x <= 36; x++) if (x % 4 === 0) map[12][x] = 4;
@@ -2647,7 +2883,7 @@ function solidTile(tx, ty) {
         if (selectedMapKey === 'sky' && ty >= levelHeight) return false;
         return true;
     }
-    return level[ty][tx] === 1;
+    return level[ty][tx] === 1 || level[ty][tx] === 9;
 }
 
 function solidAt(x, y) {
@@ -2895,6 +3131,20 @@ function drawLevel() {
                     ctx.fill();
                 }
                 ctx.restore();
+            } else if (t === 9) { // Blocco Distruttibile (Breakable Block)
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(dx, dy, TILE, TILE);
+                ctx.fillStyle = '#d97706';
+                ctx.fillRect(dx + 2, dy + 2, TILE - 4, TILE - 4);
+                // Draw crack lines pattern
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(dx + 4, dy + 4); ctx.lineTo(dx + 12, dy + 12); ctx.lineTo(dx + 18, dy + 6);
+                ctx.moveTo(dx + 6, dy + 18); ctx.lineTo(dx + 16, dy + 14); ctx.lineTo(dx + 20, dy + 20);
+                ctx.stroke();
+                ctx.strokeStyle = '#78350f';
+                ctx.strokeRect(dx + 0.5, dy + 0.5, TILE - 1, TILE - 1);
             }
         }
     }
@@ -3017,7 +3267,18 @@ function updateHUD() {
     }
 }
 
+function showCampaignFailedModal() {
+    if (gameState !== 'play') return;
+    gameState = 'campaignFailed';
+    const cLvl = CAMPAIGN_LEVELS[campaignLevelIndex];
+    document.getElementById('campaignFailSub').innerText = `Sei morto in "${cLvl ? cLvl.title : 'questo livello'}". Devi attraversare la Porta d'Uscita da vivo per completare il livello!`;
+    document.getElementById('campaignFailModal').classList.remove('hidden');
+}
+
 function winCampaignLevel() {
+    if (gameState !== 'play') return;
+    if (!players[0] || !players[0].alive) return; // Deve essere vivo per completare il livello!
+
     gameState = 'campaignClear';
     audio.playWin();
 
@@ -3040,6 +3301,7 @@ function winCampaignLevel() {
 
 function nextCampaignLevel() {
     document.getElementById('campaignClearModal').classList.add('hidden');
+    document.getElementById('campaignFailModal').classList.add('hidden');
     if (campaignLevelIndex + 1 < CAMPAIGN_LEVELS.length) {
         startCampaignLevel(campaignLevelIndex + 1);
     } else {
@@ -3054,6 +3316,7 @@ function showCampaignSelect() {
     document.getElementById('pauseMenu').classList.add('hidden');
     document.getElementById('gameover').classList.add('hidden');
     document.getElementById('campaignClearModal').classList.add('hidden');
+    document.getElementById('campaignFailModal').classList.add('hidden');
     document.getElementById('campaignSelect').classList.remove('hidden');
 
     renderCampaignGrid();
@@ -3084,6 +3347,8 @@ function startCampaignLevel(idx) {
     campaignLevelIndex = idx;
     document.getElementById('campaignSelect').classList.add('hidden');
     document.getElementById('menu').classList.add('hidden');
+    document.getElementById('campaignClearModal').classList.add('hidden');
+    document.getElementById('campaignFailModal').classList.add('hidden');
 
     players = [new Player(0, PLAYER_CONFIGS[0])]; // Player 1 Ninja Cyan
     generateLevel();
@@ -3499,6 +3764,7 @@ function showMenu() {
     document.getElementById('pauseMenu').classList.add('hidden');
     document.getElementById('gameover').classList.add('hidden');
     document.getElementById('campaignClearModal').classList.add('hidden');
+    document.getElementById('campaignFailModal').classList.add('hidden');
     gameState = 'menu';
 }
 
