@@ -1638,12 +1638,14 @@ class Player {
                     audio.playJump();
                     spawnParticles(this.x + this.w/2, this.y + this.h, 6, this.config.color);
                 } else if (this.onWall !== 0) {
-                    // Dynamic Wall Jump launch with momentum
-                    this.vx = this.onWall * MAX_RUN_SPEED * 0.9;
-                    this.vy = JUMP * 0.95;
+                    // Dynamic N+ Wall Jump & Wall Scaling ("Arrampicata sul Muro")
+                    const holdingWall = (this.onWall === 1 && inputX < 0) || (this.onWall === -1 && inputX > 0);
+                    const pushSpeed = holdingWall ? 1.4 : 2.8;
+                    this.vx = this.onWall * pushSpeed;
+                    this.vy = JUMP;
                     this.dashTime = 0;
                     audio.playJump();
-                    spawnParticles(this.x + this.w/2, this.y + this.h/2, 6, '#ffffff');
+                    spawnParticles(this.x + (this.onWall === 1 ? 0 : this.w), this.y + this.h/2, 6, '#ffffff');
                 }
             }
             this.jumpHeld = true;
