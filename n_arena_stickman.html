@@ -239,18 +239,141 @@
             pointer-events: none;
         }
 
-        .sound-toggle {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #f8fafc;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
+        /* TOUCHSCREEN CONTROLS (AUTO-DETECTED ON SMARTPHONE/TABLET) */
+        #touchControls {
+            position: absolute;
+            bottom: 14px;
+            left: 0;
+            width: 100%;
+            padding: 0 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            z-index: 15;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-        .sound-toggle:hover {
-            background: rgba(255,255,255,0.2);
+
+        #touchControls.hidden {
+            display: none !important;
+        }
+
+        .touch-dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 54px);
+            grid-template-rows: repeat(2, 54px);
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .touch-btn {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid rgba(0, 240, 255, 0.4);
+            border-radius: 12px;
+            color: #00f0ff;
+            font-size: 22px;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 0 10px rgba(0, 240, 255, 0.15);
+            cursor: pointer;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
+        }
+
+        .touch-btn:active, .touch-btn.active {
+            transform: scale(0.92);
+            background: rgba(0, 240, 255, 0.35);
+            border-color: #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+        }
+
+        .touch-actions {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            pointer-events: auto;
+        }
+
+        .touch-btn-action {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+
+        .touch-btn-jump {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(168, 85, 247, 0.35);
+            border-color: #a855f7;
+            color: #c084fc;
+            font-size: 26px;
+        }
+
+        .touch-btn-jump:active, .touch-btn-jump.active {
+            background: rgba(168, 85, 247, 0.65);
+            border-color: #c084fc;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.85);
+        }
+
+        .touch-btn-atk {
+            border-color: #ff2a5f;
+            color: #ff2a5f;
+        }
+
+        .touch-btn-atk:active, .touch-btn-atk.active {
+            background: rgba(255, 42, 95, 0.45);
+            box-shadow: 0 0 15px rgba(255, 42, 95, 0.8);
+        }
+
+        /* RESPONSIVE MOBILE / TABLET DISPLAY */
+        @media (max-width: 980px) {
+            #gameContainer {
+                width: 100vw;
+                border-radius: 0;
+                border: none;
+            }
+            #topHeader {
+                width: 100vw;
+                padding: 6px 10px;
+            }
+            #canvasWrapper {
+                width: 100vw;
+                height: auto;
+                aspect-ratio: 16 / 9;
+            }
+            canvas {
+                width: 100%;
+                height: 100%;
+            }
+            .touch-dpad {
+                grid-template-columns: repeat(3, 44px);
+                grid-template-rows: repeat(2, 44px);
+                gap: 6px;
+            }
+            .touch-btn {
+                font-size: 18px;
+                border-radius: 8px;
+            }
+            .touch-btn-action {
+                width: 48px;
+                height: 48px;
+                font-size: 18px;
+            }
+            .touch-btn-jump {
+                width: 60px;
+                height: 60px;
+                font-size: 22px;
+            }
         }
 
         /* OVERLAYS & MODALS */
@@ -609,7 +732,10 @@
                 <span id="netStatusTag" style="font-size:11px; color:#38bdf8;"></span>
             </div>
 
-            <button class="sound-toggle" onclick="toggleAudio()" id="audioBtn">🔊 Audio ON</button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="sound-toggle" onclick="toggleTouchMode()" id="touchBtn">📱 Touch: AUTO</button>
+                <button class="sound-toggle" onclick="toggleAudio()" id="audioBtn">🔊 Audio ON</button>
+            </div>
         </div>
 
         <div id="canvasWrapper">
@@ -617,6 +743,21 @@
 
             <div id="ui">
                 <div id="countdown"></div>
+            </div>
+
+            <!-- CONTROLLI TOUCHSCREEN SULLO SCHERMO (ATTIVI SU SMARTPHONE/TABLET O SE ATTIVATI) -->
+            <div id="touchControls" class="hidden">
+                <div class="touch-dpad">
+                    <div class="touch-btn" id="btnTouchLeft" style="grid-column: 1; grid-row: 2;">◀</div>
+                    <div class="touch-btn" id="btnTouchDown" style="grid-column: 2; grid-row: 2;">▼</div>
+                    <div class="touch-btn" id="btnTouchRight" style="grid-column: 3; grid-row: 2;">▶</div>
+                </div>
+
+                <div class="touch-actions">
+                    <div class="touch-btn touch-btn-action touch-btn-atk" id="btnTouchAtk">⚔️</div>
+                    <div class="touch-btn touch-btn-action" id="btnTouchPow">⚡</div>
+                    <div class="touch-btn touch-btn-action touch-btn-jump" id="btnTouchJump">▲</div>
+                </div>
             </div>
 
             <!-- MENU PRINCIPALE -->
@@ -2517,6 +2658,15 @@ function updateCamera() {
 }
 
 function updateHUD() {
+    const touchEl = document.getElementById('touchControls');
+    if (touchEl) {
+        if (gameState === 'play' && isTouchDevice()) {
+            touchEl.classList.remove('hidden');
+        } else {
+            touchEl.classList.add('hidden');
+        }
+    }
+
     const hud = document.getElementById('hud');
     const campHud = document.getElementById('campaignHud');
 
@@ -3224,8 +3374,75 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
+let forceTouchControls = false;
+
+function isTouchDevice() {
+    if (forceTouchControls) return true;
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+}
+
+function toggleTouchMode() {
+    forceTouchControls = !forceTouchControls;
+    const btn = document.getElementById('touchBtn');
+    if (btn) {
+        btn.innerText = forceTouchControls ? '📱 Touch: ON' : '📱 Touch: AUTO';
+    }
+    const touchEl = document.getElementById('touchControls');
+    if (touchEl) {
+        if (gameState === 'play' && isTouchDevice()) {
+            touchEl.classList.remove('hidden');
+        } else {
+            touchEl.classList.add('hidden');
+        }
+    }
+}
+
+function setupTouchControls() {
+    const bindings = [
+        { id: 'btnTouchLeft', key: 'ArrowLeft' },
+        { id: 'btnTouchRight', key: 'ArrowRight' },
+        { id: 'btnTouchDown', key: 'ArrowDown' },
+        { id: 'btnTouchJump', key: 'ArrowUp' },
+        { id: 'btnTouchAtk', key: 'KeyM' },
+        { id: 'btnTouchPow', key: 'KeyN' }
+    ];
+
+    bindings.forEach(b => {
+        const el = document.getElementById(b.id);
+        if (!el) return;
+
+        const press = (e) => {
+            if (e) {
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+            }
+            activeKeys[b.key] = true;
+            el.classList.add('active');
+        };
+
+        const release = (e) => {
+            if (e) {
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+            }
+            activeKeys[b.key] = false;
+            el.classList.remove('active');
+        };
+
+        el.addEventListener('touchstart', press, { passive: false });
+        el.addEventListener('touchend', release, { passive: false });
+        el.addEventListener('touchcancel', release, { passive: false });
+
+        // Mouse listeners for desktop testing
+        el.addEventListener('mousedown', press);
+        el.addEventListener('mouseup', release);
+        el.addEventListener('mouseleave', release);
+    });
+}
+
 // Initialize setup and start loop
 renderPlayerSetup();
+setupTouchControls();
 loop();
 </script>
 </body>
