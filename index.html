@@ -172,33 +172,54 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 100%;
-            gap: 14px;
-            margin-right: 14px;
+            flex: 1;
+            gap: 10px;
+            margin-right: 10px;
+            min-width: 0;
         }
 
         .campaign-stat {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
+            gap: 6px;
+            font-size: 12px;
             font-weight: 700;
             color: #f8fafc;
             background: rgba(255,255,255,0.06);
-            padding: 6px 14px;
+            padding: 5px 11px;
             border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.12);
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .switch-status {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
-            padding: 6px 14px;
+            padding: 5px 11px;
             border-radius: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .sound-toggle {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #f8fafc;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .sound-toggle:hover {
+            background: rgba(255,255,255,0.22);
+            border-color: #00f0ff;
         }
         .switch-status.locked {
             background: rgba(239, 68, 68, 0.2);
