@@ -468,9 +468,10 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 20;
+            z-index: 100; /* ensure on top */
             padding: 30px;
             transition: opacity 0.3s ease;
+            pointer-events: auto; /* allow clicks */
         }
 
         .hidden {
@@ -1475,8 +1476,13 @@ class EnergyWaveProjectile {
                 this.life = 0;
                 return;
             }
-        } else if (solidAt(checkX, checkY)) {
-            this.explode();
+        }
+        // If out of bounds, simply deactivate without explosion
+        if (checkTx < 0 || checkTx >= levelWidth || checkTy < 0 || checkTy >= levelHeight) {
+            this.life = 0;
+            return;
+        }
+        if (solidAt(checkX, checkY)) {
             this.life = 0;
             return;
         }
