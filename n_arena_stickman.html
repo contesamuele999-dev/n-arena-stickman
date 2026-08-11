@@ -40,12 +40,13 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 8px 16px;
+            padding: 5px 12px;
             width: 960px;
-            min-height: 58px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 8px;
             z-index: 10;
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
         }
@@ -173,48 +174,56 @@
             align-items: center;
             justify-content: space-between;
             flex: 1;
-            gap: 10px;
-            margin-right: 10px;
+            gap: 8px;
+            margin-right: 8px;
             min-width: 0;
         }
 
         .campaign-stat {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 12px;
+            gap: 4px;
+            font-size: 11px;
             font-weight: 700;
             color: #f8fafc;
             background: rgba(255,255,255,0.06);
-            padding: 5px 11px;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 6px;
             border: 1px solid rgba(255,255,255,0.12);
             white-space: nowrap;
             flex-shrink: 0;
+            height: 26px;
         }
 
         .switch-status {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
-            padding: 5px 11px;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             white-space: nowrap;
             flex-shrink: 0;
+            height: 26px;
+            display: flex;
+            align-items: center;
         }
 
         .sound-toggle {
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.18);
             color: #f8fafc;
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 6px;
             font-size: 11px;
             font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
             flex-shrink: 0;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             transition: all 0.2s;
         }
         .sound-toggle:hover {
@@ -514,8 +523,11 @@
         }
 
         .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+            height: 26px !important;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         /* CAMPAIGN LEVEL SELECT GRID */
@@ -2925,15 +2937,15 @@ function updateHUD() {
         document.getElementById('campLevelTitle').innerText = cLvl ? cLvl.title : 'CAMPAGNA';
         const swStatusEl = document.getElementById('campSwitchStatus');
         if (campaignSwitchActive) {
-            swStatusEl.innerText = '🔓 PORTA USCITA: APERTA!';
+            swStatusEl.innerText = '🔓 PORTA: APERTA';
             swStatusEl.className = 'switch-status unlocked';
         } else {
-            swStatusEl.innerText = '🔒 INTERRUTTORE: DISATTIVO';
+            swStatusEl.innerText = '🔒 PORTA: CHIUSA';
             swStatusEl.className = 'switch-status locked';
         }
 
-        document.getElementById('campGoldStat').innerText = `💰 ORO: ${campaignGoldCollected} / ${campaignGoldTotal}`;
-        document.getElementById('campTimeStat').innerText = `⏱️ TEMPO: ${campaignTimer.toFixed(1)}s`;
+        document.getElementById('campGoldStat').innerText = `💰 ${campaignGoldCollected}/${campaignGoldTotal}`;
+        document.getElementById('campTimeStat').innerText = `⏱️ ${campaignTimer.toFixed(1)}s`;
 
         document.getElementById('timerHud').classList.add('hidden');
         return;
