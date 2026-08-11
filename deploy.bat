@@ -34,10 +34,8 @@ if "!COMMIT_MSG!"=="" (
 
 :: Sanificazione messaggio se vuoto
 if "!COMMIT_MSG!"=="" set "COMMIT_MSG=Auto update - %date% %time%"
-:: Rimuove eventuali virgolette extra
-set "COMMIT_MSG=!COMMIT_MSG:"=!"
 
-echo Effettuando commit: "!COMMIT_MSG!"
+echo Effettuando commit con messaggio: "!COMMIT_MSG!"
 git commit -m "!COMMIT_MSG!"
 
 :: 5. Gestione Remote e Push
@@ -72,7 +70,7 @@ echo Repository GitHub:
 echo https://github.com/!GH_USER!/n-arena-stickman
 echo.
 echo Gioco Online su GitHub Pages:
-echo https://!GH_USER!.github.io/n-arena-stickman/
+echo https://contesamuele999-dev.github.io/n-arena-stickman/
 echo ========================================================
 echo.
 pause
