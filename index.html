@@ -1695,7 +1695,7 @@ class Player {
 
         if (this.isSliding) {
             // Decelerazione graduale e naturale della scivolata (attrito dinamico)
-            this.vx *= 0.935;
+            this.vx *= 0.97; // slower deceleration for longer slide
 
             // Scia di polvere durante la scivolata
             if (Math.abs(this.vx) > 0.8 && Math.random() < 0.6) {
@@ -1703,7 +1703,7 @@ class Player {
             }
 
             // Esaurimento naturale della scivolata o rilascio tasto (con controllo soffitto soffice)
-            if (Math.abs(this.vx) < 0.35 || !this.onGround) {
+            if (Math.abs(this.vx) < 0.2 || !this.onGround) { // lower threshold to keep sliding
                 if (!solidAt(this.x, this.y - 10) && !solidAt(this.x + this.w, this.y - 10)) {
                     this.isSliding = false;
                     this.h = 22;
@@ -1742,7 +1742,7 @@ class Player {
 
         // SALTO CARICATO (TIENI PREMUTO GIÙ E RILASCIA PER IL SUPER SALTO)
         if (this.onGround && inputDown && !this.isSliding) {
-            this.jumpCharge = Math.min(100, (this.jumpCharge || 0) + 2.5);
+            this.jumpCharge = Math.min(120, (this.jumpCharge || 0) + 4.0);
             if (Math.random() < 0.4) {
                 spawnParticles(this.x + Math.random() * this.w, this.y + this.h, 1, '#00f0ff');
             }
@@ -1750,8 +1750,9 @@ class Player {
 
         // Lancio del Salto Caricato semplicemente RILASCIANDO il tasto GIÙ!
         if (this.onGround && !inputDown && this.jumpCharge >= 15) {
-            const boostRatio = this.jumpCharge / 100;
-            this.vy = JUMP - (boostRatio * 6.0);
+            const BOOST_MULTIPLIER = 8.0; // increased jump boost
+            const boostRatio = Math.min(this.jumpCharge, 120) / 120;
+            this.vy = JUMP - (boostRatio * BOOST_MULTIPLIER);
             this.chargedJumpTime = 6;
             audio.playJump();
             camera.shake = Math.max(camera.shake, Math.floor(boostRatio * 4));
