@@ -957,15 +957,16 @@ function toggleAudio() {
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const TILE = 24;
-const GRAVITY = 0.52;
-const FRICTION = 0.86;            // Inerzia in decelerazione sul terreno
-const SLIDE_FRICTION = 0.968;     // Basso attrito durante la scivolata
-const ACCEL = 0.85;               // Accelerazione a terra
-const AIR_ACCEL = 0.55;           // Accelerazione in aria
-const JUMP = -10.5;               // Impulso di salto
-const MAX_WALK_SPEED = 4.8;
-const MAX_RUN_SPEED = 8.6;        // Velocità massima raggiungibile con la rincorsa
-const WALL_SLIDE_SPEED = 2.0;     // Velocità di scivolata a parete
+const GRAVITY = 0.48;
+const FRICTION = 0.90;            // Inerzia graduale in decelerazione (coasting)
+const SLIDE_FRICTION = 0.972;     // Basso attrito durante la scivolata a terra
+const ACCEL = 0.35;               // Accelerazione graduale a terra (partenza fluida)
+const AIR_ACCEL = 0.22;           // Accelerazione graduale in aria
+const JUMP = -9.8;                // Impulso di salto bilanciato
+const MAX_WALK_SPEED = 3.6;       // Velocità base controllata
+const MAX_RUN_SPEED = 5.8;        // Velocità massima rincorsa
+const WALL_SLIDE_SPEED = 1.8;     // Scivolata a parete (previene caduta mortale)
+const FATAL_FALL_SPEED = 11.5;    // Limite velocità caduta mortale dall'alto
 
 let gameMode = 'campaign'; // 'campaign', 'arena', or 'rush'
 let gameState = 'menu'; // 'menu', 'campaignSelect', 'select', 'play', 'pause', 'gameover', 'campaignClear'
@@ -1464,6 +1465,7 @@ class Player {
 
     moveY() {
         const oldY = this.y;
+        const impactVy = this.vy; // Salva la velocità di caduta prima dell'impatto
         this.y += this.vy;
         this.onGround = false;
 
@@ -1487,6 +1489,12 @@ class Player {
                     this.y = tileTop - this.h - 0.01;
                     this.vy = 0;
                     this.onGround = true;
+
+                    // MORTE DA CADUTA TROPPO ALTA (FATAL FALL IMPACT)
+                    if (impactVy > FATAL_FALL_SPEED && this.dashTime <= 0) {
+                        this.die('fall_impact');
+                        return;
+                    }
                 } else if (wasBelow && this.vy <= 0) {
                     this.y = tileBottom + 0.01;
                     this.vy = 0;
@@ -1588,8 +1596,9 @@ class Player {
         this.alive = false;
         this.deaths++;
         audio.playExplosion();
-        spawnParticles(this.x + this.w/2, this.y + 10, 20, this.config.color);
-        camera.shake = 12;
+        const pColor = cause === 'fall_impact' ? '#ef4444' : this.config.color;
+        spawnParticles(this.x + this.w/2, this.y + this.h, 25, pColor);
+        camera.shake = cause === 'fall_impact' ? 16 : 12;
         slowMoTimer = 12;
 
         if (killer && killer !== this) {
