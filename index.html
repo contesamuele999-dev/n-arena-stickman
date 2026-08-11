@@ -1191,16 +1191,16 @@ function toggleAudio() {
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const TILE = 24;
-const GRAVITY = 0.48;
-const FRICTION = 0.90;            // Inerzia graduale in decelerazione (coasting)
-const SLIDE_FRICTION = 0.972;     // Basso attrito durante la scivolata a terra
-const ACCEL = 0.35;               // Accelerazione graduale a terra (partenza fluida)
-const AIR_ACCEL = 0.22;           // Accelerazione graduale in aria
-const JUMP = -9.8;                // Impulso di salto bilanciato
-const MAX_WALK_SPEED = 3.6;       // Velocità base controllata
-const MAX_RUN_SPEED = 5.8;        // Velocità massima rincorsa
-const WALL_SLIDE_SPEED = 1.8;     // Scivolata a parete (previene caduta mortale)
-const FATAL_FALL_SPEED = 17.5;    // Limite velocità caduta mortale dall'alto (solo cadute molto alte > 12 blocchi)
+const GRAVITY = 0.44;
+const FRICTION = 0.88;            // Inerzia controllata in decelerazione (coasting)
+const SLIDE_FRICTION = 0.970;     // Basso attrito durante la scivolata a terra
+const ACCEL = 0.22;               // Accelerazione graduale e pacata a terra
+const AIR_ACCEL = 0.14;           // Controllo in aria morbido e leggibile
+const JUMP = -8.6;                // Impulso di salto proporzionato
+const MAX_WALK_SPEED = 2.6;       // Velocità base camminata (non più troppo veloce!)
+const MAX_RUN_SPEED = 4.2;        // Velocità massima raggiungibile SOLO con la rincorsa
+const WALL_SLIDE_SPEED = 1.6;     // Scivolata a parete
+const FATAL_FALL_SPEED = 17.5;    // Limite velocità caduta mortale (solo da voragini > 12 blocchi)
 
 let gameMode = 'campaign'; // 'campaign', 'arena', or 'rush'
 let gameState = 'menu'; // 'menu', 'campaignSelect', 'select', 'play', 'pause', 'gameover', 'campaignClear'
@@ -1578,8 +1578,8 @@ class Player {
         }
         this.waveHeld = inputWave;
 
-        // N+ GROUND SLIDE ("SCIVOLATA A TERRA")
-        if (this.onGround && Math.abs(this.vx) > 2.0 && inputDown) {
+        // N+ GROUND SLIDE ("SCIVOLATA A TERRA"): Richiede obbligatoriamente aver preso la rincorsa!
+        if (this.onGround && this.runTimer >= 18 && Math.abs(this.vx) > 2.2 && inputDown) {
             if (!this.isSliding) {
                 this.isSliding = true;
                 this.h = 12;
