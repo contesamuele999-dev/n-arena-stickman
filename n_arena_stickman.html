@@ -335,6 +335,28 @@
             box-shadow: 0 0 15px rgba(255, 42, 95, 0.8);
         }
 
+        .touch-btn-charge {
+            border-color: #22c55e;
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.25);
+        }
+
+        .touch-btn-charge:active, .touch-btn-charge.active {
+            background: rgba(34, 197, 94, 0.6);
+            box-shadow: 0 0 18px rgba(34, 197, 94, 0.8);
+        }
+
+        .touch-btn-wave {
+            border-color: #f59e0b;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.25);
+        }
+
+        .touch-btn-wave:active, .touch-btn-wave.active {
+            background: rgba(245, 158, 11, 0.6);
+            box-shadow: 0 0 18px rgba(245, 158, 11, 0.8);
+        }
+
         /* RESPONSIVE MOBILE / TABLET DISPLAY */
         @media (max-width: 980px) {
             #gameContainer {
@@ -754,6 +776,8 @@
                 </div>
 
                 <div class="touch-actions">
+                    <div class="touch-btn touch-btn-action touch-btn-charge" id="btnTouchCharge">🔋</div>
+                    <div class="touch-btn touch-btn-action touch-btn-wave" id="btnTouchWave">💥</div>
                     <div class="touch-btn touch-btn-action touch-btn-atk" id="btnTouchAtk">⚔️</div>
                     <div class="touch-btn touch-btn-action" id="btnTouchPow">⚡</div>
                     <div class="touch-btn touch-btn-action touch-btn-jump" id="btnTouchJump">▲</div>
@@ -1093,6 +1117,32 @@ class AudioEngine {
             osc.start(startTime); osc.stop(startTime + 0.3);
         });
     }
+
+    playCharge() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.12);
+    }
+
+    playBeam() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.45, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.35);
+    }
 }
 
 const audio = new AudioEngine();
@@ -1169,11 +1219,18 @@ const POWERS = {
     shuriken: { name: 'Shuriken', cd: 140, desc: 'Lancia una stella ninja che rimbalza.' }
 };
 
+const ENERGY_WAVES = {
+    kame: { name: 'Kame-Blast 🔵', color: '#00f0ff', speed: 15, size: 28, desc: 'Raggio energetico cyan trapassante.' },
+    inferno: { name: 'Inferno Plasma 🔴', color: '#ef4444', speed: 12, size: 34, desc: 'Onda di plasma incandescente ad ampio raggio.' },
+    void: { name: 'Void Singularity 🟣', color: '#a855f7', speed: 10, size: 30, desc: 'Impulso gravitazionale di energia oscura.' },
+    thunder: { name: 'Thunder Bolt ⚡', color: '#eab308', speed: 22, size: 24, desc: 'Raggio di fulmine fulmineo ad altissima velocità.' }
+};
+
 const PLAYER_CONFIGS = [
-    { color: '#00f0ff', name: 'Ninja Cyan', keys: { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', atk: 'KeyM', pow: 'KeyN' } },
-    { color: '#ff2a5f', name: 'Ninja Red', keys: { left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', atk: 'KeyF', pow: 'KeyG' } },
-    { color: '#a855f7', name: 'Ninja Purple', keys: { left: 'KeyJ', right: 'KeyL', up: 'KeyI', down: 'KeyK', atk: 'Semicolon', pow: 'Quote' } },
-    { color: '#22c55e', name: 'Ninja Green', keys: { left: 'Numpad4', right: 'Numpad6', up: 'Numpad8', down: 'Numpad2', atk: 'Numpad7', pow: 'Numpad9' } }
+    { color: '#00f0ff', name: 'Ninja Cyan', keys: { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', atk: 'KeyM', pow: 'KeyN', charge: 'KeyC', wave: 'KeyV' } },
+    { color: '#ff2a5f', name: 'Ninja Red', keys: { left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', atk: 'KeyF', pow: 'KeyG', charge: 'KeyC', wave: 'KeyV' } },
+    { color: '#a855f7', name: 'Ninja Purple', keys: { left: 'KeyJ', right: 'KeyL', up: 'KeyI', down: 'KeyK', atk: 'Semicolon', pow: 'Quote', charge: 'KeyO', wave: 'KeyP' } },
+    { color: '#22c55e', name: 'Ninja Green', keys: { left: 'Numpad4', right: 'Numpad6', up: 'Numpad8', down: 'Numpad2', atk: 'Numpad7', pow: 'Numpad9', charge: 'Numpad1', wave: 'Numpad3' } }
 ];
 
 let activeKeys = {};
@@ -1249,6 +1306,96 @@ class Scarf {
 }
 
 // ==========================================
+// ==========================================
+// RANGED ENERGY WAVE PROJECTILE CLASS
+// ==========================================
+class EnergyWaveProjectile {
+    constructor(x, y, facing, ownerId, waveType) {
+        this.x = x;
+        this.y = y;
+        this.facing = facing;
+        this.ownerId = ownerId;
+        this.type = waveType || 'kame';
+        const info = ENERGY_WAVES[this.type] || ENERGY_WAVES.kame;
+        this.speed = info.speed;
+        this.w = info.size;
+        this.h = info.size;
+        this.color = info.color;
+        this.life = 120;
+        this.hitPlayers = [];
+    }
+
+    update() {
+        this.life--;
+        this.x += this.facing * this.speed;
+
+        // Particle trail
+        if (Math.random() < 0.7) {
+            spawnParticles(this.x + this.w/2, this.y + this.h/2, 2, this.color);
+        }
+
+        // Destroy mine traps
+        const tx = Math.floor((this.x + this.w/2) / TILE);
+        const ty = Math.floor((this.y + this.h/2) / TILE);
+        if (tx >= 0 && tx < levelWidth && ty >= 0 && ty < levelHeight && level[ty][tx] === 2) {
+            level[ty][tx] = 0; // Destroy mine
+            audio.playExplosion();
+            spawnParticles((tx + 0.5)*TILE, (ty + 0.5)*TILE, 15, '#ef4444');
+        }
+
+        // Wall collision check
+        if (solidAt(this.x + (this.facing > 0 ? this.w : 0), this.y + this.h/2)) {
+            this.explode();
+            this.life = 0;
+            return;
+        }
+
+        // Player hit check
+        for (let p of players) {
+            if (p.id !== this.ownerId && p.alive && !this.hitPlayers.includes(p.id)) {
+                if (rectIntersect(this, p)) {
+                    const owner = players.find(pl => pl.id === this.ownerId);
+                    p.takeHit(owner, 2);
+                    p.vx += this.facing * 9; // Knockback impulse
+                    this.hitPlayers.push(p.id);
+                    this.explode();
+                    if (this.type !== 'kame') this.life = 0; // Kame-blast pierces, others detonate!
+                }
+            }
+        }
+    }
+
+    explode() {
+        audio.playExplosion();
+        spawnParticles(this.x + this.w/2, this.y + this.h/2, 22, this.color);
+        camera.shake = 12;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 20;
+
+        const cx = this.x + this.w/2 - camera.x;
+        const cy = this.y + this.h/2 - camera.y;
+
+        ctx.beginPath();
+        if (this.type === 'kame') {
+            ctx.ellipse(cx, cy, this.w/2, this.h/3, 0, 0, Math.PI * 2);
+        } else if (this.type === 'inferno') {
+            ctx.arc(cx, cy, this.w/2, 0, Math.PI * 2);
+        } else if (this.type === 'void') {
+            ctx.arc(cx, cy, this.w/2, 0, Math.PI * 2);
+        } else {
+            ctx.rect(this.x - camera.x, this.y + 6 - camera.y, this.w * 1.6, 10);
+        }
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+// ==========================================
 // PLAYER CLASS (WITH N+ INERTIA, RINCORSA & SCIVOLATA)
 // ==========================================
 class Player {
@@ -1259,6 +1406,10 @@ class Player {
         this.isBot = false;
         this.isOnlineRemote = false;
         this.powerType = 'dash';
+        this.energyWaveType = 'kame';
+        this.energy = 0;
+        this.maxEnergy = 100;
+        this.isCharging = false;
         this.scarf = new Scarf(6, config.color);
         this.kills = 0;
         this.deaths = 0;
@@ -1285,6 +1436,19 @@ class Player {
         this.onGround = false;
         this.onWall = 0;
         this.atkBox = null;
+        this.atkTimer = 0;
+        this.atkCooldown = 0;
+        this.respawnTimer = 0;
+        this.animFrame = 0;
+        this.animState = 'idle';
+        this.hitPlayers = [];
+        this.teleportCooldown = 0;
+        this.runTimer = 0;
+        this.isSliding = false;
+        this.h = 22;
+        this.energy = 0;
+        this.isCharging = false;
+    }
         this.atkTimer = 0;
         this.atkCooldown = 0;
         this.respawnTimer = 0;
@@ -1336,6 +1500,8 @@ class Player {
         let inputJump = false;
         let inputAtk = false;
         let inputPow = false;
+        let inputCharge = false;
+        let inputWave = false;
 
         if (this.isOnlineRemote && netManager.isOnline) {
             const netIn = netManager.onlineInputs[this.id] || {};
@@ -1344,6 +1510,8 @@ class Player {
             inputJump = netIn.jump || false;
             inputAtk = netIn.atk || false;
             inputPow = netIn.pow || false;
+            inputCharge = netIn.charge || false;
+            inputWave = netIn.wave || false;
         } else if (this.isBot) {
             const botIn = this.updateBotLogic();
             inputX = botIn.x;
@@ -1351,6 +1519,8 @@ class Player {
             inputJump = botIn.jump;
             inputAtk = botIn.atk;
             inputPow = botIn.pow;
+            inputCharge = botIn.charge || false;
+            inputWave = botIn.wave || false;
         } else {
             const k = this.config.keys;
             if (activeKeys[k.left] || (netManager.isOnline && (activeKeys['ArrowLeft'] || activeKeys['KeyA']))) inputX = -1;
@@ -1359,11 +1529,32 @@ class Player {
             inputJump = activeKeys[k.up] || (netManager.isOnline && (activeKeys['ArrowUp'] || activeKeys['KeyW']));
             inputAtk = activeKeys[k.atk] || (netManager.isOnline && (activeKeys['KeyM'] || activeKeys['KeyF']));
             inputPow = activeKeys[k.pow] || (netManager.isOnline && (activeKeys['KeyN'] || activeKeys['KeyG']));
+            inputCharge = activeKeys[k.charge] || activeKeys['KeyC'] || activeKeys['KeyB'];
+            inputWave = activeKeys[k.wave] || activeKeys['KeyV'] || activeKeys['KeyJ'];
 
             if (netManager.isOnline) {
-                netManager.sendInput({ x: inputX, down: inputDown, jump: inputJump, atk: inputAtk, pow: inputPow });
+                netManager.sendInput({ x: inputX, down: inputDown, jump: inputJump, atk: inputAtk, pow: inputPow, charge: inputCharge, wave: inputWave });
             }
         }
+
+        // CHARGING MECHANISM ("RICARICA ONDA ENERGETICA")
+        if (inputCharge && this.alive) {
+            this.isCharging = true;
+            if (this.energy < this.maxEnergy) {
+                this.energy = Math.min(this.maxEnergy, this.energy + 1.25);
+                if (Math.random() < 0.35) audio.playCharge();
+            }
+            const wInfo = ENERGY_WAVES[this.energyWaveType] || ENERGY_WAVES.kame;
+            spawnParticles(this.x + Math.random()*this.w, this.y + Math.random()*this.h, 2, wInfo.color);
+        } else {
+            this.isCharging = false;
+        }
+
+        // FIRE ENERGY WAVE ("SPARA ONDA ENERGETICA")
+        if (inputWave && !this.waveHeld) {
+            this.fireEnergyWave();
+        }
+        this.waveHeld = inputWave;
 
         // N+ GROUND SLIDE ("SCIVOLATA A TERRA")
         if (this.onGround && Math.abs(this.vx) > 2.0 && inputDown) {
@@ -1720,6 +1911,28 @@ class Player {
         }
     }
 
+    fireEnergyWave() {
+        if (this.energy < 100 || !this.alive) return;
+        this.energy = 0;
+        audio.playBeam();
+        camera.shake = 16;
+        slowMoTimer = 6;
+
+        this.vx -= this.facing * 6.5; // Recoil
+
+        const wInfo = ENERGY_WAVES[this.energyWaveType] || ENERGY_WAVES.kame;
+
+        projectiles.push(new EnergyWaveProjectile(
+            this.x + (this.facing > 0 ? this.w + 4 : -32),
+            this.y + this.h/2 - 14,
+            this.facing,
+            this.id,
+            this.energyWaveType
+        ));
+
+        spawnParticles(this.x + this.w/2, this.y + this.h/2, 22, wInfo.color);
+    }
+
     takeHit(from, dmg) {
         if (this.shieldTime > 0) {
             if (from) {
@@ -1776,6 +1989,30 @@ class Player {
 
     draw() {
         if (!this.alive) return;
+
+        // Draw Energy Charge Loading Bar above head
+        if (this.energy > 0 || this.isCharging) {
+            const barW = 34;
+            const barH = 5;
+            const bx = Math.floor(this.x + this.w/2 - barW/2 - camera.x);
+            const by = Math.floor(this.y - 15 - camera.y);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            ctx.fillRect(bx, by, barW, barH);
+
+            const pct = this.energy / this.maxEnergy;
+            const wInfo = ENERGY_WAVES[this.energyWaveType] || ENERGY_WAVES.kame;
+            ctx.fillStyle = pct >= 1.0 ? '#22c55e' : (this.isCharging ? wInfo.color : '#00f0ff');
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.shadowBlur = pct >= 1.0 ? 10 : 4;
+            ctx.fillRect(bx, by, barW * pct, barH);
+
+            ctx.strokeStyle = pct >= 1.0 ? '#22c55e' : 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx, by, barW, barH);
+            ctx.restore();
+        }
 
         this.scarf.draw(camera);
 
@@ -2701,6 +2938,8 @@ function updateHUD() {
         const hpDots = '<div class="hp-dot"></div>'.repeat(p.hp) + '<div class="hp-dot lost"></div>'.repeat(2 - p.hp);
         const botTag = p.isBot ? `<span class="bot-badge">BOT</span>` : (netManager.isOnline && p.id !== netManager.myPlayerId ? `<span class="online-badge">NET</span>` : '');
 
+        const wInfo = ENERGY_WAVES[p.energyWaveType] || ENERGY_WAVES.kame;
+
         html += `<div class="playerHud ${!p.alive ? 'dead' : ''}" style="border-color:${p.config.color}; color:${p.config.color}">
             <div class="player-header">
                 <span>${p.config.name} ${botTag}</span>
@@ -2712,6 +2951,12 @@ function updateHUD() {
                 <span>${cdPct >= 100 ? 'PRONTO' : Math.ceil((POWERS[p.powerType].cd - p.cooldown)/60) + 's'}</span>
             </div>
             <div class="cooldown-bar"><div class="cooldown-fill" style="width:${cdPct}%; background:${p.config.color}"></div></div>
+            <div class="cooldown-bar" style="margin-top: 4px; height: 4px; background: rgba(0,0,0,0.4);">
+                <div class="cooldown-fill" style="width:${p.energy}%; background:${p.energy >= 100 ? '#22c55e' : wInfo.color}"></div>
+            </div>
+            <div style="font-size:9px; font-weight:800; text-align:right; margin-top:2px; color:${p.energy >= 100 ? '#22c55e' : '#cbd5e1'}">
+                ONDA: ${p.energy >= 100 ? '⚡ PRONTA' : Math.floor(p.energy) + '%'}
+            </div>
             <div class="score-box">
                 <span>${gameMode === 'rush' ? 'MONETE' : 'UCCISIONI'}: ${p.score}</span>
                 <span>MORTI: ${p.deaths}</span>
@@ -3202,6 +3447,7 @@ function leaveOnlineAndMenu() {
 // ==========================================
 let playerTypes = ['human', 'bot', 'bot', 'bot'];
 let selectedPowers = ['dash', 'hook', 'shield', 'shuriken'];
+let selectedWaves = ['kame', 'inferno', 'void', 'thunder'];
 let playerCount = 2;
 
 function showMenu() {
@@ -3252,6 +3498,14 @@ function renderPlayerSetup() {
                 <option value="shield" ${selectedPowers[i] === 'shield' ? 'selected' : ''}>Scudo Defl.</option>
                 <option value="shuriken" ${selectedPowers[i] === 'shuriken' ? 'selected' : ''}>Shuriken</option>
             </select>
+
+            <div class="setting-label">Onda Energetica:</div>
+            <select onchange="selectedWaves[${i}] = this.value">
+                <option value="kame" ${selectedWaves[i] === 'kame' ? 'selected' : ''}>Kame-Blast 🔵</option>
+                <option value="inferno" ${selectedWaves[i] === 'inferno' ? 'selected' : ''}>Inferno Plasma 🔴</option>
+                <option value="void" ${selectedWaves[i] === 'void' ? 'selected' : ''}>Void Pulse 🟣</option>
+                <option value="thunder" ${selectedWaves[i] === 'thunder' ? 'selected' : ''}>Thunder Bolt ⚡</option>
+            </select>
         </div>`;
     }
     container.innerHTML = html;
@@ -3277,6 +3531,7 @@ function startGame() {
         const p = new Player(i, PLAYER_CONFIGS[i]);
         p.isBot = playerTypes[i] === 'bot';
         p.powerType = selectedPowers[i] || 'dash';
+        p.energyWaveType = selectedWaves[i] || 'kame';
         players.push(p);
     }
 
@@ -3404,7 +3659,9 @@ function setupTouchControls() {
         { id: 'btnTouchDown', key: 'ArrowDown' },
         { id: 'btnTouchJump', key: 'ArrowUp' },
         { id: 'btnTouchAtk', key: 'KeyM' },
-        { id: 'btnTouchPow', key: 'KeyN' }
+        { id: 'btnTouchPow', key: 'KeyN' },
+        { id: 'btnTouchCharge', key: 'KeyC' },
+        { id: 'btnTouchWave', key: 'KeyV' }
     ];
 
     bindings.forEach(b => {
