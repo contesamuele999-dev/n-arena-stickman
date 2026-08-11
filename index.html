@@ -1577,50 +1577,55 @@ class Player {
         }
         this.waveHeld = inputWave;
 
-        // N+ GROUND SLIDE ("SCIVOLATA A TERRA"): Richiede obbligatoriamente aver preso la rincorsa!
+        // N+ REALISTIC GROUND SLIDE ("SCIVOLATA REALISTICA"): Richiede rincorsa e rallenta fino ad esaurirsi!
         if (this.onGround && this.runTimer >= 18 && Math.abs(this.vx) > 2.2 && inputDown) {
             if (!this.isSliding) {
                 this.isSliding = true;
                 this.h = 12;
                 this.y += 10;
                 audio.playDash();
-                spawnParticles(this.x + this.w/2, this.y + this.h, 5, '#38bdf8');
+                spawnParticles(this.x + this.w/2, this.y + this.h, 6, '#38bdf8');
             }
-        } else if (this.isSliding) {
-            if (!inputDown || Math.abs(this.vx) < 1.0 || !this.onGround) {
-                // Check overhead collision before standing back up
+        }
+
+        if (this.isSliding) {
+            // Decelerazione graduale e naturale della scivolata (attrito dinamico)
+            this.vx *= 0.935;
+
+            // Scia di polvere durante la scivolata
+            if (Math.abs(this.vx) > 0.8 && Math.random() < 0.6) {
+                spawnParticles(this.x + (this.vx > 0 ? 0 : this.w), this.y + this.h, 1, '#38bdf8');
+            }
+
+            // Esaurimento naturale della scivolata o rilascio tasto (con controllo soffitto soffice)
+            if (Math.abs(this.vx) < 0.35 || !this.onGround) {
                 if (!solidAt(this.x, this.y - 10) && !solidAt(this.x + this.w, this.y - 10)) {
                     this.isSliding = false;
                     this.h = 22;
                     this.y -= 10;
+                    this.vx = 0;
                 }
             }
-        }
-
-        // N+ HORIZONTAL PHYSICS & RUN-UP ("RINCORSA & INERZIA")
-        if (this.dashTime <= 0) {
+        } else if (this.dashTime <= 0) {
+            // HORIZONTAL MOVEMENT & RINCORSA (Solo quando non sta scivolando!)
             if (inputX !== 0) {
                 this.facing = Math.sign(inputX);
                 this.runTimer++;
-                // Accumulated momentum speed buildup (rincorsa)
                 const currentMax = (this.runTimer > 25) ? MAX_RUN_SPEED : MAX_WALK_SPEED;
                 this.vx += inputX * (this.onGround ? ACCEL : AIR_ACCEL);
 
-                // Skidding scivolata when reversing direction at high speed
                 if (this.onGround && Math.sign(this.vx) !== inputX && Math.abs(this.vx) > 3.0) {
                     spawnParticles(this.x + this.w/2, this.y + this.h, 2, '#ffffff');
                 }
 
                 this.vx = Math.max(-currentMax, Math.min(currentMax, this.vx));
 
-                // Rincorsa speed dust
                 if (this.runTimer > 35 && this.onGround && Math.random() < 0.3) {
                     spawnParticles(this.x + (inputX < 0 ? this.w : 0), this.y + this.h - 2, 1, this.config.color);
                 }
             } else {
                 this.runTimer = 0;
-                // Apply inertia friction (lower friction while sliding)
-                this.vx *= this.isSliding ? SLIDE_FRICTION : FRICTION;
+                this.vx *= FRICTION;
                 if (Math.abs(this.vx) < 0.05) this.vx = 0;
             }
         }
