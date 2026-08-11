@@ -1200,7 +1200,7 @@ const JUMP = -9.8;                // Impulso di salto bilanciato
 const MAX_WALK_SPEED = 3.6;       // Velocità base controllata
 const MAX_RUN_SPEED = 5.8;        // Velocità massima rincorsa
 const WALL_SLIDE_SPEED = 1.8;     // Scivolata a parete (previene caduta mortale)
-const FATAL_FALL_SPEED = 11.5;    // Limite velocità caduta mortale dall'alto
+const FATAL_FALL_SPEED = 17.5;    // Limite velocità caduta mortale dall'alto (solo cadute molto alte > 12 blocchi)
 
 let gameMode = 'campaign'; // 'campaign', 'arena', or 'rush'
 let gameState = 'menu'; // 'menu', 'campaignSelect', 'select', 'play', 'pause', 'gameover', 'campaignClear'
