@@ -2,8 +2,19 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>N+ Arena Stickman - Modern & Online Edition</title>
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="theme-color" content="#00f0ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="N+ Arena">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="Cyber Action Platformer & Stickman Arena - Campagna Solo e Multiplayer Online">
+    <!-- Favicon & PWA Manifest -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="manifest" href="manifest.json">
     <!-- Fonts -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap">
     <!-- PeerJS WebRTC Library -->
@@ -16,9 +27,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            min-height: 100dvh;
             font-family: 'Outfit', sans-serif;
             overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: manipulation;
             color: #f0f2f5;
         }
 
@@ -31,7 +47,11 @@
             background: #0b0c13;
             display: flex;
             flex-direction: column;
-            width: 960px;
+            width: 100%;
+            max-width: 960px;
+            max-height: 100dvh;
+            height: 100%;
+            margin: auto;
         }
 
         /* HEADER VITA ESTERNO (POSIZIONATO FUORI DALLA SCHERMATA DEL LIVELLO) */
@@ -40,27 +60,41 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 5px 12px;
-            width: 960px;
-            min-height: 50px;
+            padding: 4px 12px;
+            width: 100%;
+            min-height: 44px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
             z-index: 10;
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            flex-shrink: 0;
         }
 
         #canvasWrapper {
             position: relative;
-            width: 960px;
-            height: 540px;
+            width: 100%;
+            flex: 1 1 auto;
+            min-height: 0;
+            min-width: 0;
             background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
 
         canvas {
             display: block;
             image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: contain;
+            width: auto;
+            height: auto;
         }
 
         #ui {
@@ -327,8 +361,8 @@
         #touchControls {
             background: rgba(11, 13, 20, 0.98);
             border-top: 1px solid rgba(255, 255, 255, 0.12);
-            width: 960px;
-            padding: 10px 20px;
+            width: 100%;
+            padding: 6px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -337,6 +371,7 @@
             touch-action: none;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
             z-index: 10;
+            flex-shrink: 0;
         }
 
         #touchControls.hidden {
@@ -345,61 +380,61 @@
 
         .touch-dpad {
             display: grid;
-            grid-template-columns: repeat(3, 54px);
-            grid-template-rows: repeat(2, 54px);
-            gap: 8px;
+            grid-template-columns: repeat(3, clamp(38px, 6vw, 52px));
+            grid-template-rows: repeat(2, clamp(38px, 6vw, 52px));
+            gap: clamp(4px, 1vw, 8px);
             pointer-events: auto;
         }
 
         .touch-btn {
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 2px solid rgba(0, 240, 255, 0.4);
-            border-radius: 12px;
+            border-radius: 10px;
             color: #00f0ff;
-            font-size: 22px;
+            font-size: clamp(16px, 2.4vw, 22px);
             font-weight: 900;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 0 10px rgba(0, 240, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6), inset 0 0 10px rgba(0, 240, 255, 0.15);
             cursor: pointer;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
-            transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
+            transition: transform 0.06s ease, background 0.06s ease, border-color 0.06s ease;
         }
 
         .touch-btn:active, .touch-btn.active {
             transform: scale(0.92);
-            background: rgba(0, 240, 255, 0.35);
+            background: rgba(0, 240, 255, 0.4);
             border-color: #00f0ff;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.8);
         }
 
         .touch-actions {
             display: flex;
-            gap: 12px;
-            align-items: flex-end;
+            gap: clamp(4px, 1.2vw, 10px);
+            align-items: center;
             pointer-events: auto;
         }
 
         .touch-btn-action {
-            width: 58px;
-            height: 58px;
+            width: clamp(38px, 5.8vw, 54px);
+            height: clamp(38px, 5.8vw, 54px);
             border-radius: 50%;
-            font-size: 20px;
+            font-size: clamp(15px, 2.2vw, 20px);
         }
 
         .touch-btn-jump {
-            width: 70px;
-            height: 70px;
+            width: clamp(46px, 6.8vw, 64px);
+            height: clamp(46px, 6.8vw, 64px);
             border-radius: 50%;
             background: rgba(168, 85, 247, 0.35);
             border-color: #a855f7;
             color: #c084fc;
-            font-size: 26px;
+            font-size: clamp(18px, 2.8vw, 26px);
         }
 
         .touch-btn-jump:active, .touch-btn-jump.active {
@@ -443,42 +478,61 @@
         /* RESPONSIVE MOBILE / TABLET DISPLAY */
         @media (max-width: 980px) {
             #gameContainer {
-                width: 100vw;
                 border-radius: 0;
                 border: none;
             }
+        }
+
+        @media (max-height: 600px) {
             #topHeader {
-                width: 100vw;
-                padding: 6px 10px;
+                padding: 2px 8px;
+                min-height: 36px;
             }
-            #canvasWrapper {
-                width: 100vw;
-                height: auto;
-                aspect-ratio: 16 / 9;
-            }
-            canvas {
-                width: 100%;
-                height: 100%;
+            #touchControls {
+                padding: 4px 10px;
             }
             .touch-dpad {
-                grid-template-columns: repeat(3, 44px);
-                grid-template-rows: repeat(2, 44px);
-                gap: 6px;
-            }
-            .touch-btn {
-                font-size: 18px;
-                border-radius: 8px;
+                grid-template-columns: repeat(3, 38px);
+                grid-template-rows: repeat(2, 38px);
+                gap: 4px;
             }
             .touch-btn-action {
-                width: 48px;
-                height: 48px;
-                font-size: 18px;
+                width: 38px;
+                height: 38px;
+                font-size: 15px;
             }
             .touch-btn-jump {
-                width: 60px;
-                height: 60px;
-                font-size: 22px;
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
             }
+        }
+
+        /* PWA INSTALL MODAL & BANNER STYLES */
+        .pwa-card {
+            background: rgba(13, 17, 28, 0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 2px solid rgba(0, 240, 255, 0.4);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(0, 240, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 460px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .pwa-icon-glow {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
         }
 
         /* OVERLAYS & MODALS */
@@ -493,7 +547,9 @@
             justify-content: center;
             align-items: center;
             z-index: 100; /* ensure on top */
-            padding: 30px;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             transition: opacity 0.3s ease;
             pointer-events: auto; /* allow clicks */
         }
@@ -846,7 +902,8 @@
                 <span id="netStatusTag" style="font-size:11px; color:#38bdf8;"></span>
             </div>
 
-            <div style="display: flex; gap: 8px; align-items: center;">
+            <div style="display: flex; gap: 6px; align-items: center;">
+                <button class="sound-toggle" onclick="showPwaInstallModal()" id="pwaInstallBtn" title="Installa App PWA">📲 App</button>
                 <button class="sound-toggle" onclick="toggleTouchMode()" id="touchBtn">📱 Touch: AUTO</button>
                 <button class="sound-toggle" onclick="toggleAudio()" id="audioBtn">🔊 Audio ON</button>
             </div>
@@ -877,6 +934,7 @@
                     <button class="btn btn-secondary" onclick="showSelect('arena')">⚔️ Arena Locale (PvP / Bot)</button>
                     <button class="btn btn-online" onclick="showOnlineLobby()">🌐 Multiplayer Online</button>
                     <button class="btn btn-secondary" onclick="showSelect('rush')">💰 Gold Rush Mode</button>
+                    <button class="btn btn-secondary" onclick="showPwaInstallModal()">📲 Installa PWA</button>
                 </div>
 
                 <div class="controls-card">
@@ -884,11 +942,11 @@
                     <div class="controls-grid">
                         <div><strong>Muoviti / Rincorsa:</strong> Freccie Sinistra/Destra (o WASD)</div>
                         <div><strong>Salto / Scalata Muri:</strong> Freccia Su (o W)</div>
-                        <div><strong>Salto Caricato:</strong> Tieni premuto Giù (S) a terra per caricare, poi RILASCIALO per saltare! 🚀</div>
+                        <div><strong>Salto Caricato:</strong> Tieni premuto Giù (S) a terra, poi RILASCIA per saltare! 🚀</div>
+                        <div><strong>Attacco in Caduta (Slam):</strong> Premi Giù (S o ▼) in aria per picchiata & onda d'urto! 💥</div>
                         <div><strong>Scivolata a Terra:</strong> Corsa + Freccia Giù (o S)</div>
                         <div><strong>Attacco Katana Direzionale:</strong> Su / Giù / Avanti + Tasto M (o F)</div>
-                        <div><strong>Onda Energetica Direzionale:</strong> Carica Tasto C, Spara V (o J) + Direzione (Su/Giù/Avanti)!</div>
-                        <div><strong>Fisica & Portali:</strong> L'Onda si teletrasporta nei portali e distrugge i blocchi crepati!</div>
+                        <div><strong>Onda Energetica Direzionale:</strong> Carica Tasto C, Spara V (o J) + Direzione!</div>
                     </div>
                 </div>
             </div>
@@ -1024,6 +1082,37 @@
                 <div class="btn-group">
                     <button class="btn" onclick="restartGame()">🔄 Riprova Livello</button>
                     <button class="btn btn-secondary" onclick="showCampaignSelect()">📋 Selezione Livelli</button>
+                </div>
+            </div>
+
+            <!-- PWA INSTALL MODAL -->
+            <div id="pwaInstallModal" class="overlay hidden">
+                <div class="pwa-card">
+                    <div class="pwa-icon-glow">
+                        <img src="favicon.svg" alt="N+ Arena" width="68" height="68" style="border-radius: 50%; filter: drop-shadow(0 0 14px #00f0ff);">
+                    </div>
+                    <h2 style="font-size: 24px; font-weight: 900; color: #00f0ff; margin-top: 10px; text-transform: uppercase;">📲 INSTALLA N+ ARENA</h2>
+                    <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 14px; text-align: center; max-width: 380px; line-height: 1.45;">
+                        Installa l'applicazione sul tuo dispositivo per giocare a <strong>schermo intero</strong>, con prestazioni a 60 FPS e <strong>anche offline</strong>!
+                    </p>
+
+                    <!-- Standard install buttons -->
+                    <div id="pwaStdActions" class="btn-group" style="margin-top: 4px;">
+                        <button class="btn" onclick="triggerPwaInstall()">⬇️ Installa Ora</button>
+                        <button class="btn btn-secondary" onclick="dismissPwaModal(false)">Più tardi</button>
+                        <button class="btn btn-secondary" style="font-size: 11px; opacity: 0.75;" onclick="dismissPwaModal(true)">Non mostrare più</button>
+                    </div>
+
+                    <!-- iOS Safari guide -->
+                    <div id="pwaIosGuide" class="hidden" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 10px; padding: 12px 16px; margin-top: 8px; text-align: left; max-width: 380px; font-size: 13px; line-height: 1.5;">
+                        <div style="font-weight: 800; color: #38bdf8; margin-bottom: 6px;">📱 Come installare su iPhone / iPad:</div>
+                        <div style="margin-bottom: 4px;">1️⃣ Tocca il pulsante <strong>Condividi <span style="font-size: 15px;">⎋</span></strong> nella barra di Safari</div>
+                        <div style="margin-bottom: 4px;">2️⃣ Scorri in basso e scegli <strong>"Aggiungi a Schermata Home" ➕</strong></div>
+                        <div>3️⃣ Tocca <strong>"Aggiungi"</strong> in alto a destra!</div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <button class="btn btn-secondary btn-small" onclick="dismissPwaModal(false)">Ho capito</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1166,6 +1255,48 @@ class AudioEngine {
         gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
         noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+        noise.start();
+    }
+
+    playDiveAttack() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(500, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(160, this.ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.22);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.22);
+    }
+
+    playSlam() {
+        if (!this.enabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(190, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.7, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+
+        const bufferSize = Math.floor(this.ctx.sampleRate * 0.18);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        filter.frequency.linearRampToValueAtTime(120, this.ctx.currentTime + 0.18);
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.55, this.ctx.currentTime);
+        nGain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.18);
+        noise.connect(filter); filter.connect(nGain); nGain.connect(this.ctx.destination);
         noise.start();
     }
 
@@ -1722,6 +1853,9 @@ class Player {
         this.teleportCooldown = 0;
         this.runTimer = 0;
         this.isSliding = false;
+        this.isDiving = false;
+        this.downHeld = false;
+        this.diveHitPlayers = [];
         this.reset();
     }
 
@@ -1750,6 +1884,9 @@ class Player {
         this.teleportCooldown = 0;
         this.runTimer = 0;
         this.isSliding = false;
+        this.isDiving = false;
+        this.downHeld = false;
+        this.diveHitPlayers = [];
         this.h = 22;
         this.energy = 0;
         this.isCharging = false;
@@ -1818,14 +1955,25 @@ class Player {
             inputWave = botIn.wave || false;
         } else {
             const k = this.config.keys;
-            if (activeKeys[k.left] || (netManager.isOnline && (activeKeys['ArrowLeft'] || activeKeys['KeyA']))) inputX = -1;
-            if (activeKeys[k.right] || (netManager.isOnline && (activeKeys['ArrowRight'] || activeKeys['KeyD']))) inputX = 1;
-            inputDown = activeKeys[k.down] || (netManager.isOnline && (activeKeys['ArrowDown'] || activeKeys['KeyS']));
-            inputJump = activeKeys[k.up] || (netManager.isOnline && (activeKeys['ArrowUp'] || activeKeys['KeyW']));
-            inputAtk = activeKeys[k.atk] || (netManager.isOnline && (activeKeys['KeyM'] || activeKeys['KeyF']));
-            inputPow = activeKeys[k.pow] || (netManager.isOnline && (activeKeys['KeyN'] || activeKeys['KeyG']));
-            inputCharge = activeKeys[k.charge] || activeKeys['KeyC'] || activeKeys['KeyB'];
-            inputWave = activeKeys[k.wave] || activeKeys['KeyV'] || activeKeys['KeyJ'];
+            if (this.id === 0) {
+                if (activeKeys[k.left] || activeKeys['ArrowLeft'] || activeKeys['KeyA']) inputX = -1;
+                if (activeKeys[k.right] || activeKeys['ArrowRight'] || activeKeys['KeyD']) inputX = 1;
+                inputDown = activeKeys[k.down] || activeKeys['ArrowDown'] || activeKeys['KeyS'];
+                inputJump = activeKeys[k.up] || activeKeys['ArrowUp'] || activeKeys['KeyW'];
+                inputAtk = activeKeys[k.atk] || activeKeys['KeyM'] || activeKeys['KeyF'];
+                inputPow = activeKeys[k.pow] || activeKeys['KeyN'] || activeKeys['KeyG'];
+                inputCharge = activeKeys[k.charge] || activeKeys['KeyC'] || activeKeys['KeyB'];
+                inputWave = activeKeys[k.wave] || activeKeys['KeyV'] || activeKeys['KeyJ'];
+            } else {
+                if (activeKeys[k.left] || (netManager.isOnline && (activeKeys['ArrowLeft'] || activeKeys['KeyA']))) inputX = -1;
+                if (activeKeys[k.right] || (netManager.isOnline && (activeKeys['ArrowRight'] || activeKeys['KeyD']))) inputX = 1;
+                inputDown = activeKeys[k.down] || (netManager.isOnline && (activeKeys['ArrowDown'] || activeKeys['KeyS']));
+                inputJump = activeKeys[k.up] || (netManager.isOnline && (activeKeys['ArrowUp'] || activeKeys['KeyW']));
+                inputAtk = activeKeys[k.atk] || (netManager.isOnline && (activeKeys['KeyM'] || activeKeys['KeyF']));
+                inputPow = activeKeys[k.pow] || (netManager.isOnline && (activeKeys['KeyN'] || activeKeys['KeyG']));
+                inputCharge = activeKeys[k.charge] || activeKeys['KeyC'] || activeKeys['KeyB'];
+                inputWave = activeKeys[k.wave] || activeKeys['KeyV'] || activeKeys['KeyJ'];
+            }
 
             if (netManager.isOnline) {
                 netManager.sendInput({ x: inputX, down: inputDown, jump: inputJump, atk: inputAtk, pow: inputPow, charge: inputCharge, wave: inputWave });
@@ -1850,6 +1998,20 @@ class Player {
             this.fireEnergyWave(inputJump, inputDown, inputX);
         }
         this.waveHeld = inputWave;
+
+        // DIVE ATTACK / ATTACCO IN CADUTA (Tasto GIÙ in volo!)
+        if (!this.onGround && this.onWall === 0 && !this.isDiving && this.dashTime <= 0 && this.alive) {
+            if (inputDown && !this.downHeld) {
+                this.isDiving = true;
+                this.vy = 15;
+                this.vx *= 0.35;
+                this.diveHitPlayers = [];
+                audio.playDiveAttack();
+                camera.shake = Math.max(camera.shake, 4);
+                spawnParticles(this.x + this.w/2, this.y + this.h, 10, this.config.color || '#00f0ff');
+            }
+        }
+        this.downHeld = inputDown;
 
         // N+ REALISTIC GROUND SLIDE ("SCIVOLATA REALISTICA"): Richiede rincorsa e rallenta fino ad esaurirsi!
         if (this.onGround && this.runTimer >= 18 && Math.abs(this.vx) > 2.2 && inputDown) {
@@ -1977,7 +2139,7 @@ class Player {
 
         // N+ WALL SLIDE ("SCIVOLATA A PARETE")
         this.onWall = 0;
-        if (!this.onGround && this.vy > 0) {
+        if (!this.onGround && this.vy > 0 && !this.isDiving) {
             if (solidAt(this.x - 2, this.y + 4) || solidAt(this.x - 2, this.y + this.h - 4)) this.onWall = 1;
             else if (solidAt(this.x + this.w + 2, this.y + 4) || solidAt(this.x + this.w + 2, this.y + this.h - 4)) this.onWall = -1;
         }
@@ -1987,6 +2149,56 @@ class Player {
             if (this.vy > maxWallSlide) this.vy = maxWallSlide;
             if (Math.random() < 0.35) {
                 spawnParticles(this.x + (this.onWall === 1 ? 0 : this.w), this.y + this.h/2, 1, '#ffffff');
+            }
+        }
+
+        // DIVE ATTACK PLUNGE DYNAMICS & DESCENT COLLISION
+        if (this.isDiving) {
+            if (this.vy < 15) this.vy = 15;
+            this.vx *= 0.88;
+
+            // Trailing downward sparks and speedline particles
+            if (Math.random() < 0.8) {
+                spawnParticles(this.x + this.w/2 + (Math.random() - 0.5) * 6, this.y + this.h - 2, 2, this.config.color || '#00f0ff');
+            }
+            if (Math.random() < 0.4) {
+                spawnParticles(this.x + this.w/2, this.y, 1, '#ffffff');
+            }
+
+            // Dive hitbox during descent
+            const diveBox = {
+                x: this.x - 6,
+                y: this.y + this.h - 6,
+                w: this.w + 12,
+                h: 22
+            };
+
+            for (let p of players) {
+                if (p !== this && p.alive && !this.diveHitPlayers.includes(p.id) && rectIntersect(diveBox, p)) {
+                    p.takeHit(this, 1.5);
+                    p.vy = 10; // Downward spike!
+                    p.vx = this.facing * 4;
+                    audio.playHit();
+                    camera.shake = Math.max(camera.shake, 7);
+                    spawnParticles(p.x + p.w/2, p.y + p.h/2, 10, '#ff2a5f');
+                    this.diveHitPlayers.push(p.id);
+                }
+            }
+
+            // Destroy breakable blocks (Tile 9) on plunge path
+            const startTx = Math.floor(diveBox.x / TILE);
+            const endTx = Math.floor((diveBox.x + diveBox.w) / TILE);
+            const startTy = Math.floor(diveBox.y / TILE);
+            const endTy = Math.floor((diveBox.y + diveBox.h) / TILE);
+            for (let tx = startTx; tx <= endTx; tx++) {
+                for (let ty = startTy; ty <= endTy; ty++) {
+                    if (tx >= 0 && tx < levelWidth && ty >= 0 && ty < levelHeight && level[ty][tx] === 9) {
+                        level[ty][tx] = 0;
+                        audio.playExplosion();
+                        spawnParticles((tx + 0.5) * TILE, (ty + 0.5) * TILE, 12, '#f59e0b');
+                        camera.shake = Math.max(camera.shake, 6);
+                    }
+                }
             }
         }
 
@@ -2116,6 +2328,11 @@ class Player {
                 jump = true;
             }
 
+            // Bot dive attack when above target in air
+            if (!this.onGround && dy > 30 && Math.abs(dx) < 26 && Math.random() < 0.35) {
+                down = true;
+            }
+
             if (gameMode !== 'rush' && Math.hypot(dx, dy) < 32 && Math.random() < 0.2) {
                 atk = true;
             }
@@ -2126,7 +2343,8 @@ class Player {
 
     updateAnimState(inputX) {
         this.animFrame++;
-        if (this.atkTimer > 0) this.animState = 'attack';
+        if (this.isDiving) this.animState = 'dive';
+        else if (this.atkTimer > 0) this.animState = 'attack';
         else if (this.dashTime > 0) this.animState = 'dash';
         else if (this.isSliding) this.animState = 'slide';
         else if (this.onWall !== 0) this.animState = 'wallslide';
@@ -2196,8 +2414,45 @@ class Player {
                     this.vy = 0;
                     this.onGround = true;
 
-                    // MORTE DA CADUTA TROPPO ALTA (FATAL FALL IMPACT)
-                    if (impactVy > FATAL_FALL_SPEED && this.dashTime <= 0) {
+                    // GROUND SLAM IMPACT (Quando atterra da Dive Attack)
+                    if (this.isDiving) {
+                        this.isDiving = false;
+                        audio.playSlam();
+                        camera.shake = Math.max(camera.shake, 10);
+                        // Ground slam particle burst
+                        spawnParticles(this.x + this.w/2, this.y + this.h, 18, this.config.color || '#00f0ff');
+                        spawnParticles(this.x + this.w/2 - 12, this.y + this.h, 6, '#ffffff');
+                        spawnParticles(this.x + this.w/2 + 12, this.y + this.h, 6, '#ffffff');
+
+                        // Radial AoE damage to surrounding enemies
+                        const slamRadius = 50;
+                        const impactX = this.x + this.w/2;
+                        const impactY = this.y + this.h;
+                        for (let p of players) {
+                            if (p !== this && p.alive && !this.diveHitPlayers.includes(p.id)) {
+                                const d = Math.hypot(p.x + p.w/2 - impactX, p.y + p.h/2 - impactY);
+                                if (d <= slamRadius) {
+                                    p.takeHit(this, 1);
+                                    p.vy = -6.5; // launch into air!
+                                    p.vx = Math.sign((p.x + p.w/2) - impactX) * 4.5 || (this.facing * 4);
+                                    spawnParticles(p.x + p.w/2, p.y + p.h/2, 8, '#ff2a5f');
+                                    this.diveHitPlayers.push(p.id);
+                                }
+                            }
+                        }
+
+                        // Destroy breakable tiles (Tile 9) directly under landing
+                        for (let dtx = -1; dtx <= 1; dtx++) {
+                            const btx = tx + dtx;
+                            const bty = ty;
+                            if (btx >= 0 && btx < levelWidth && bty >= 0 && bty < levelHeight && level[bty][btx] === 9) {
+                                level[bty][btx] = 0;
+                                audio.playExplosion();
+                                spawnParticles((btx + 0.5) * TILE, (bty + 0.5) * TILE, 12, '#f59e0b');
+                            }
+                        }
+                    } else if (impactVy > FATAL_FALL_SPEED && this.dashTime <= 0) {
+                        // MORTE DA CADUTA TROPPO ALTA (FATAL FALL IMPACT)
                         this.die('fall_impact');
                         return;
                     }
@@ -2221,6 +2476,7 @@ class Player {
                 this.y -= 2;
                 this.vy = 0;
                 this.onGround = true;
+                if (this.isDiving) this.isDiving = false;
                 break;
             }
         }
@@ -2491,6 +2747,35 @@ class Player {
 
         this.drawStickmanPose(this.animState, f);
 
+        // Dive Attack energy cone & downward speed lines
+        if (this.isDiving) {
+            ctx.save();
+            ctx.strokeStyle = this.config.color || '#00f0ff';
+            ctx.fillStyle = (this.config.color || '#00f0ff') + '44';
+            ctx.lineWidth = 1.8;
+            ctx.shadowColor = this.config.color || '#00f0ff';
+            ctx.shadowBlur = 10;
+            
+            // Downward energy cone at feet
+            ctx.beginPath();
+            ctx.moveTo(this.w / 2 - 8, this.h - 2);
+            ctx.lineTo(this.w / 2 + 8, this.h - 2);
+            ctx.lineTo(this.w / 2, this.h + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Kinetic vertical streaks
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(this.w / 2 - 6, -8); ctx.lineTo(this.w / 2 - 6, 2);
+            ctx.moveTo(this.w / 2 + 6, -12); ctx.lineTo(this.w / 2 + 6, -2);
+            ctx.moveTo(this.w / 2, -16); ctx.lineTo(this.w / 2, -4);
+            ctx.stroke();
+            ctx.restore();
+        }
+
         // Katana Attack Slash (Direzionale: Su, Giù, Avanti)
         if (this.atkTimer > 0) {
             ctx.strokeStyle = '#ffffff';
@@ -2560,7 +2845,7 @@ class Player {
         const runCycle = (this.animFrame * 0.35) % (Math.PI * 2);
         const bob = Math.sin(runCycle * 2) * 1.5;
         const cx = this.w / 2;
-        const headY = state === 'slide' ? 4 : 5;
+        const headY = state === 'slide' ? 4 : (state === 'dive' ? 7 : 5);
 
         let torsoTop = { x: cx, y: 9 };
         let torsoBot = { x: cx, y: 14 };
@@ -2569,7 +2854,15 @@ class Player {
         let lLeg = { x: cx - 3, y: 21 };
         let rLeg = { x: cx + 3, y: 21 };
 
-        if (state === 'slide') {
+        if (state === 'dive') {
+            // Aerodynamic plunging dive-kick pose
+            torsoTop = { x: cx - 1, y: 7 };
+            torsoBot = { x: cx + 1, y: 13 };
+            lArm = { x: cx - 6, y: 5 };
+            rArm = { x: cx - 4, y: 4 };
+            lLeg = { x: cx - 2, y: 17 };
+            rLeg = { x: cx + 3, y: 23 };
+        } else if (state === 'slide') {
             // Crouching ground slide pose
             torsoTop = { x: cx - 3, y: 5 };
             torsoBot = { x: cx + 3, y: 9 };
@@ -3988,6 +4281,8 @@ function showMenu() {
     document.getElementById('gameover').classList.add('hidden');
     document.getElementById('campaignClearModal').classList.add('hidden');
     document.getElementById('campaignFailModal').classList.add('hidden');
+    const pwaModal = document.getElementById('pwaInstallModal');
+    if (pwaModal) pwaModal.classList.add('hidden');
     gameState = 'menu';
 }
 
@@ -4159,18 +4454,22 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-let forceTouchControls = false;
+let touchMode = 'auto'; // 'auto' | 'on' | 'off'
 
 function isTouchDevice() {
-    if (forceTouchControls) return true;
+    if (touchMode === 'on') return true;
+    if (touchMode === 'off') return false;
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
 }
 
 function toggleTouchMode() {
-    forceTouchControls = !forceTouchControls;
+    if (touchMode === 'auto') touchMode = 'on';
+    else if (touchMode === 'on') touchMode = 'off';
+    else touchMode = 'auto';
+
     const btn = document.getElementById('touchBtn');
     if (btn) {
-        btn.innerText = forceTouchControls ? '📱 Touch: ON' : '📱 Touch: AUTO';
+        btn.innerText = touchMode === 'on' ? '📱 Touch: ON' : (touchMode === 'off' ? '📱 Touch: OFF' : '📱 Touch: AUTO');
     }
     const touchEl = document.getElementById('touchControls');
     if (touchEl) {
@@ -4225,6 +4524,93 @@ function setupTouchControls() {
         el.addEventListener('mouseup', release);
         el.addEventListener('mouseleave', release);
     });
+}
+
+// ==========================================
+// PWA INSTALLATION & SERVICE WORKER LOGIC
+// ==========================================
+let deferredPwaPrompt = null;
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log('ServiceWorker registered:', reg.scope);
+        }).catch(err => {
+            console.warn('ServiceWorker registration error:', err);
+        });
+    });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPwaPrompt = e;
+    const dismissed = localStorage.getItem('pwa_dismissed');
+    if (!dismissed) {
+        setTimeout(() => {
+            if (gameState === 'menu') {
+                showPwaInstallModal();
+            }
+        }, 2200);
+    }
+});
+
+function isIos() {
+    const ua = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function showPwaInstallModal() {
+    if (isStandalone()) {
+        alert('N+ Arena è già installata e in esecuzione come Web App!');
+        return;
+    }
+    const modal = document.getElementById('pwaInstallModal');
+    const stdActions = document.getElementById('pwaStdActions');
+    const iosGuide = document.getElementById('pwaIosGuide');
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        if (isIos() && !deferredPwaPrompt) {
+            if (stdActions) stdActions.classList.add('hidden');
+            if (iosGuide) iosGuide.classList.remove('hidden');
+        } else {
+            if (stdActions) stdActions.classList.remove('hidden');
+            if (iosGuide) iosGuide.classList.add('hidden');
+        }
+    }
+}
+
+function dismissPwaModal(permanent = false) {
+    const modal = document.getElementById('pwaInstallModal');
+    if (modal) modal.classList.add('hidden');
+    if (permanent) {
+        localStorage.setItem('pwa_dismissed', 'true');
+    }
+}
+
+function triggerPwaInstall() {
+    if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User installed PWA');
+            }
+            deferredPwaPrompt = null;
+            dismissPwaModal(true);
+        });
+    } else if (isIos()) {
+        const stdActions = document.getElementById('pwaStdActions');
+        const iosGuide = document.getElementById('pwaIosGuide');
+        if (stdActions) stdActions.classList.add('hidden');
+        if (iosGuide) iosGuide.classList.remove('hidden');
+    } else {
+        alert('Per installare l\'app, usa l\'opzione "Installa applicazione" o "Aggiungi a Schermata Home" nel menu del browser.');
+        dismissPwaModal(false);
+    }
 }
 
 // Initialize setup and start loop

@@ -1,0 +1,26 @@
+{
+  "name": "N+ Arena Stickman - Modern & Online Edition",
+  "short_name": "N+ Arena",
+  "description": "Cyber Action Platformer & Multiplayer Stickman Arena",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#06070a",
+  "theme_color": "#00f0ff",
+  "categories": ["games", "action", "arcade"],
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
