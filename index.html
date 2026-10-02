@@ -1159,6 +1159,7 @@
         <!-- CONTROLLI TOUCHSCREEN ESTERNI (POSIZIONATI FUORI DALLA SCHERMATA DEL GIOCO) -->
         <div id="touchControls" class="hidden">
             <div class="touch-dpad">
+                <button class="touch-btn" id="btnTouchAimUp" aria-label="Mira in alto" style="grid-column: 2; grid-row: 1;">▲</button>
                 <button class="touch-btn" id="btnTouchLeft" aria-label="Sinistra" style="grid-column: 1; grid-row: 2;">◀</button>
                 <button class="touch-btn" id="btnTouchDown" aria-label="Giù" style="grid-column: 2; grid-row: 2;">▼</button>
                 <button class="touch-btn" id="btnTouchRight" aria-label="Destra" style="grid-column: 3; grid-row: 2;">▶</button>
@@ -1725,7 +1726,8 @@ function readPlayerInput(player) {
         x: Number(pressed(keys.right, 'KeyD')) - Number(pressed(keys.left, 'KeyA')),
         down: pressed(keys.down, 'KeyS'), jump: pressed(keys.up, 'KeyW'),
         atk: pressed(keys.atk, 'KeyF'), pow: pressed(keys.pow, 'KeyG'),
-        charge: pressed(keys.charge, 'KeyB'), wave: pressed(keys.wave, 'KeyJ')
+        charge: pressed(keys.charge, 'KeyB'), wave: pressed(keys.wave, 'KeyJ'),
+        aimUp: (player.id === 0 || netManager.isOnline) && !!activeKeys.TouchAimUp
     };
 }
 
@@ -2061,6 +2063,7 @@ class Player {
         let inputPow = false;
         let inputCharge = false;
         let inputWave = false;
+        let inputAimUp = false;
 
         if (this.isOnlineRemote && netManager.isOnline) {
             const netIn = netManager.onlineInputs[this.id] || {};
@@ -2071,6 +2074,7 @@ class Player {
             inputPow = netIn.pow || false;
             inputCharge = netIn.charge || false;
             inputWave = netIn.wave || false;
+            inputAimUp = netIn.aimUp || false;
         } else if (this.isBot) {
             const botIn = this.updateBotLogic();
             inputX = botIn.x;
@@ -2084,7 +2088,7 @@ class Player {
             const input = readPlayerInput(this);
             inputX = input.x;
             inputDown = input.down; inputJump = input.jump; inputAtk = input.atk;
-            inputPow = input.pow; inputCharge = input.charge; inputWave = input.wave;
+            inputPow = input.pow; inputCharge = input.charge; inputWave = input.wave; inputAimUp = input.aimUp;
         }
 
         // CHARGING MECHANISM ("RICARICA ONDA ENERGETICA")
@@ -2102,7 +2106,7 @@ class Player {
 
         // FIRE ENERGY WAVE ("SPARA ONDA ENERGETICA DIREZIONALE")
         if (inputWave && !this.waveHeld) {
-            this.fireEnergyWave(inputJump, inputDown, inputX);
+            this.fireEnergyWave(inputJump || inputAimUp, inputDown, inputX);
         }
         this.waveHeld = inputWave;
 
@@ -4142,7 +4146,7 @@ class NetworkManager {
                     this.onlineInputs[assignedSlot] = {
                         x: Number.isFinite(input.x) ? Math.max(-1, Math.min(1, input.x)) : 0,
                         down: input.down === true, jump: input.jump === true, atk: input.atk === true,
-                        pow: input.pow === true, charge: input.charge === true, wave: input.wave === true
+                        pow: input.pow === true, charge: input.charge === true, wave: input.wave === true, aimUp: input.aimUp === true
                     };
                 } else if (data.type === 'UPDATE_CONFIG' && !this.matchStarted && Object.hasOwn(POWERS, data.power)) {
                     this.lobbyState.players[assignedSlot].power = data.power;
@@ -4829,6 +4833,7 @@ function setupTouchControls() {
         { id: 'btnTouchRight', key: 'ArrowRight' },
         { id: 'btnTouchDown', key: 'ArrowDown' },
         { id: 'btnTouchJump', key: 'ArrowUp' },
+        { id: 'btnTouchAimUp', key: 'TouchAimUp' },
         { id: 'btnTouchAtk', key: 'KeyM' },
         { id: 'btnTouchPow', key: 'KeyN' },
         { id: 'btnTouchCharge', key: 'KeyC' },
