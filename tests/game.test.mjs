@@ -329,3 +329,21 @@ test('peer identifiers cannot alter the connection dictionary prototype', () => 
   game.run('netManager.close()');
   assert.equal(connection.open, false);
 });
+
+test('campaign deaths are counted across retries, persisted, and animate while the level is failed', () => {
+  const game = createGame();
+  game.run("startCampaignLevel(0); players[0].die('trap')");
+  assert.equal(game.run('campaignDeaths'), 1);
+  assert.equal(game.storage.get('n_stickman_deaths'), '1');
+  const before = game.run('particles.length');
+  assert.ok(before > 6, 'death spawns ragdoll pieces and sparks');
+  game.run('for (let i = 0; i < 400; i++) updateGame()');
+  assert.equal(game.run('gameState'), 'campaignFailed');
+  assert.equal(game.run('particles.length'), 0, 'effects keep updating and expire after death');
+  game.run("restartGame(); players[0].die('trap')");
+  assert.equal(game.run('campaignDeaths'), 2);
+  assert.equal(game.run('campaignDeathMarks.length'), 2);
+  game.run('startCampaignLevel(0)');
+  assert.equal(game.run('campaignDeaths'), 0, 'entering a level fresh resets its counter');
+  assert.equal(game.run('totalDeaths'), 2);
+});

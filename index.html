@@ -230,6 +230,65 @@
             opacity: 0.85;
         }
 
+        /* CONTATORE MORTI */
+        .death-count { color: #f87171; font-family: 'JetBrains Mono', monospace; }
+        #campDeathStat {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.4);
+            min-width: 54px;
+            justify-content: center;
+        }
+        #campDeathStat.pop { animation: death-pop 0.5s cubic-bezier(.2, 1.6, .4, 1); }
+        @keyframes death-pop {
+            0%   { transform: scale(1.7); background: rgba(239, 68, 68, 0.6); box-shadow: 0 0 18px rgba(239, 68, 68, 0.9); }
+            100% { transform: scale(1); }
+        }
+        .death-tally {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 8px;
+            padding: 8px 14px;
+            margin-bottom: 8px;
+        }
+        /* Il pannello arriva dopo l'animazione di morte */
+        #campaignFailModal { animation: fail-in 0.45s 0.75s both; }
+        @keyframes fail-in { from { opacity: 0; } to { opacity: 1; } }
+        .playerHud.dead { border-color: #ef4444 !important; }
+
+        /* TITOLI E BOTTONI: BAGLIORE ANIMATO */
+        .overlay h1 {
+            background-size: 200% 200%;
+            filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.45));
+            animation: title-shift 5s ease-in-out infinite alternate;
+        }
+        @keyframes title-shift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+        .overlay {
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(0, 240, 255, 0.10), transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(112, 0, 255, 0.12), transparent 60%),
+                rgba(6, 7, 10, 0.92) !important;
+        }
+        .btn { position: relative; overflow: hidden; }
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -80%;
+            width: 50%; height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transition: left 0.45s ease;
+            pointer-events: none;
+        }
+        .btn:hover::after { left: 130%; }
+        .btn:active { transform: translateY(1px) scale(0.98); }
+        @media (prefers-reduced-motion: reduce) {
+            .overlay h1, #campDeathStat.pop { animation: none; }
+        }
+
         /* CAMPAIGN HUD HEADER BAR (EXPANDED & BEAUTIFULLY SPACED) */
         .campaign-hud-box {
             display: flex;
@@ -930,6 +989,7 @@
 
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <div class="switch-status locked" id="campSwitchStatus">🔒 INTERRUTTORE: DISATTIVO</div>
+                    <div class="campaign-stat" id="campDeathStat" title="Morti in questo livello">💀 0</div>
                     <div class="campaign-stat" id="campGoldStat">💰 ORO: 0 / 0</div>
                     <div class="campaign-stat" id="campTimeStat">⏱️ TEMPO: 0.0s</div>
                 </div>
@@ -1118,6 +1178,7 @@
             <div id="campaignFailModal" class="overlay hidden">
                 <h1 style="color: #ef4444;">💀 LIVELLO FALLITO!</h1>
                 <p id="campaignFailSub" style="color: #94a3b8; font-size: 16px; margin-bottom: 20px;">Sei morto prima di attraversare il Portale d'Uscita!</p>
+                <div id="campaignFailDeaths" class="death-tally">💀 Morti: 0</div>
                 <div class="btn-group">
                     <button class="btn" onclick="restartGame()">🔄 Riprova Livello</button>
                     <button class="btn btn-secondary" onclick="showCampaignSelect()">📋 Selezione Livelli</button>
@@ -1618,6 +1679,9 @@ let campaignSwitchActive = false;
 let campaignGoldCollected = 0;
 let campaignGoldTotal = 0;
 let campaignTimer = 0;
+let campaignDeaths = 0;        // morti nel livello corrente (restano tra i tentativi)
+let campaignDeathMarks = [];   // punti in cui sei morto in questo livello
+let totalDeaths = Math.max(0, parseInt(readStorage('n_stickman_deaths'), 10) || 0);
 function readStorage(key) {
     try { return localStorage.getItem(key); }
     catch (error) { console.warn('Lettura salvataggi non disponibile:', error); return null; }
@@ -2728,16 +2792,19 @@ class Player {
         this.alive = false;
         this.deaths++;
         audio.playExplosion();
-        const pColor = cause === 'fall_impact' ? '#ef4444' : this.config.color;
-        spawnParticles(this.x + this.w/2, this.y + this.h, 25, pColor);
+        spawnDeathFx(this);
         camera.shake = cause === 'fall_impact' ? 16 : 12;
-        slowMoTimer = 12;
+        slowMoTimer = 24;
 
         if (killer && killer !== this) {
             killer.kills++;
             if (gameMode === 'arena') killer.score++;
         }
         if (gameMode === 'campaign') {
+            campaignDeaths++;
+            totalDeaths++;
+            writeStorage('n_stickman_deaths', String(totalDeaths));
+            campaignDeathMarks.push({ x: this.x + this.w/2, y: Math.min(this.y + this.h/2, levelHeight * TILE - 8) });
             showCampaignFailedModal();
         } else {
             this.respawnTimer = 120;
@@ -2827,6 +2894,8 @@ class Player {
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        ctx.shadowColor = c;
+        ctx.shadowBlur = 8;
 
         // Ghost Trail on Dash
         if (this.dashTime > 0) {
@@ -3064,10 +3133,10 @@ class Projectile {
 }
 
 class Particle {
-    constructor(x, y, color) {
+    constructor(x, y, color, speed = 5) {
         this.x = x; this.y = y;
-        this.vx = (Math.random() - 0.5) * 5;
-        this.vy = (Math.random() - 0.5) * 5;
+        this.vx = (Math.random() - 0.5) * speed;
+        this.vy = (Math.random() - 0.5) * speed;
         this.life = 25 + Math.random() * 20;
         this.maxLife = this.life;
         this.color = color;
@@ -3087,8 +3156,115 @@ class Particle {
     }
 }
 
-function spawnParticles(x, y, count, color) {
-    for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color));
+function spawnParticles(x, y, count, color, speed) {
+    for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color, speed));
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+}
+
+// Animazione di morte: lo stickman va in pezzi (ragdoll), onda d'urto, lampo e scritta KO.
+// Tutti gli effetti vivono nell'array particles (stessa interfaccia update/draw/life).
+class Gib {
+    constructor(x, y, vx, vy, color, len) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.color = color;
+        this.len = len;            // 0 = testa, altrimenti lunghezza dell'arto
+        this.angle = Math.random() * Math.PI * 2;
+        this.spin = (Math.random() - 0.5) * 0.7;
+        this.life = this.maxLife = 85 + Math.random() * 30;
+    }
+    update() {
+        this.vy += 0.3;
+        this.x += this.vx;
+        if (this.y < levelHeight * TILE && solidAt(this.x, this.y)) { this.x -= this.vx; this.vx *= -0.5; }
+        this.y += this.vy;
+        if (this.y < levelHeight * TILE && solidAt(this.x, this.y)) {
+            this.y -= this.vy;
+            this.vy *= -0.45;
+            this.vx *= 0.75;
+            this.spin *= 0.6;
+        }
+        this.angle += this.spin;
+        this.life--;
+    }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, this.life / 30);
+        ctx.translate(this.x - camera.x, this.y - camera.y);
+        ctx.rotate(this.angle);
+        ctx.strokeStyle = ctx.fillStyle = ctx.shadowColor = this.color;
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        if (this.len) { ctx.moveTo(-this.len/2, 0); ctx.lineTo(this.len/2, 0); ctx.stroke(); }
+        else { ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+    }
+}
+
+function spawnDeathFx(player) {
+    const color = player.config.color;
+    const x = player.x + player.w/2;
+    const y = Math.min(player.y + player.h/2, levelHeight * TILE - 8); // visibile anche cadendo nel vuoto
+    // testa, busto, due braccia, due gambe
+    for (const len of [0, 6, 5, 5, 8, 8]) {
+        particles.push(new Gib(x, y - (len ? 0 : 7),
+            player.vx * 0.4 + (Math.random() - 0.5) * 7, -2.5 - Math.random() * 5, color, len));
+    }
+    spawnParticles(x, y, 30, color, 11);
+    spawnParticles(x, y, 12, '#ffffff', 7);
+    // onda d'urto
+    particles.push({
+        life: 26,
+        update() { this.life--; },
+        draw() {
+            const t = 1 - this.life / 26;
+            ctx.save();
+            ctx.globalAlpha = 1 - t;
+            ctx.strokeStyle = ctx.shadowColor = color;
+            ctx.shadowBlur = 14;
+            ctx.lineWidth = 4 * (1 - t) + 0.5;
+            ctx.beginPath();
+            ctx.arc(x - camera.x, y - camera.y, 6 + t * 64, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+    });
+    // lampo a tutto schermo
+    particles.push({
+        life: 10,
+        update() { this.life--; },
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.life / 10 * 0.28;
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+    });
+    // scritta KO che sale
+    particles.push({
+        life: 60,
+        update() { this.life--; },
+        draw() {
+            const t = 1 - this.life / 60;
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, this.life / 20);
+            ctx.font = `900 ${16 + Math.min(1, t * 6) * 6}px Outfit, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 12;
+            ctx.fillText('💀 KO', x - camera.x, y - camera.y - 18 - t * 34);
+            ctx.restore();
+        }
+    });
 }
 
 // ==========================================
@@ -3658,14 +3834,33 @@ function drawLevel() {
     ctx.fillStyle = theme.bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Alone luminoso al centro, nel colore del tema
+    const glow = ctx.createRadialGradient(canvas.width/2, canvas.height*0.45, 0, canvas.width/2, canvas.height*0.45, canvas.width*0.6);
+    glow.addColorStop(0, theme.tileEdge + '24');
+    glow.addColorStop(1, theme.tileEdge + '00');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Griglia in parallasse
     ctx.strokeStyle = theme.grid;
     ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 30) {
+    const gridX = -((camera.x * 0.3) % 30), gridY = -((camera.y * 0.3) % 30);
+    for (let x = gridX; x < canvas.width; x += 30) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 30) {
+    for (let y = gridY; y < canvas.height; y += 30) {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
     }
+
+    // Pulviscolo che fluttua sullo sfondo
+    ctx.fillStyle = theme.tileEdge;
+    for (let i = 0; i < 36; i++) {
+        const px = ((i * 137.5 - camera.x * 0.5 + gameTime * (0.1 + (i % 3) * 0.05)) % canvas.width + canvas.width) % canvas.width;
+        const py = ((i * 89.3 - camera.y * 0.5 - gameTime * 0.08) % canvas.height + canvas.height) % canvas.height;
+        ctx.globalAlpha = 0.12 + (i % 5) * 0.05;
+        ctx.fillRect(px, py, 1 + i % 2, 1 + i % 2);
+    }
+    ctx.globalAlpha = 1;
 
     for (let y = 0; y < levelHeight; y++) {
         for (let x = 0; x < levelWidth; x++) {
@@ -3679,15 +3874,26 @@ function drawLevel() {
                 ctx.fillRect(dx, dy, TILE, TILE);
                 ctx.fillStyle = theme.tileSub;
                 ctx.fillRect(dx + 2, dy + 2, TILE - 4, TILE - 4);
-                ctx.strokeStyle = theme.tileEdge;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(dx + 0.5, dy + 0.5, TILE - 1, TILE - 1);
+                // Bordo neon solo sui lati esposti: profilo pulito invece di una griglia di riquadri
+                ctx.fillStyle = theme.tileEdge;
+                if (!solidTile(x, y - 1)) {
+                    ctx.fillRect(dx, dy, TILE, 2);
+                    ctx.globalAlpha = 0.16;
+                    ctx.fillRect(dx, dy - 3, TILE, 3); // finto bagliore sopra il bordo
+                    ctx.globalAlpha = 1;
+                }
+                if (!solidTile(x, y + 1)) ctx.fillRect(dx, dy + TILE - 1, TILE, 1);
+                if (!solidTile(x - 1, y)) ctx.fillRect(dx, dy, 1, TILE);
+                if (!solidTile(x + 1, y)) ctx.fillRect(dx + TILE - 1, dy, 1, TILE);
             } else if (t === 2) { // Mine
                 const pulse = Math.sin(gameTime * 0.12) * 2;
                 ctx.fillStyle = '#ff2a5f';
+                ctx.shadowColor = '#ff2a5f';
+                ctx.shadowBlur = 10 + pulse * 2;
                 ctx.beginPath();
                 ctx.arc(dx + TILE/2, dy + TILE/2, 6 + pulse, 0, Math.PI*2);
                 ctx.fill();
+                ctx.shadowBlur = 0;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
                 ctx.arc(dx + TILE/2, dy + TILE/2, 2, 0, Math.PI*2);
@@ -3761,6 +3967,22 @@ function drawLevel() {
         }
     }
 
+    // Croci dove sei già morto in questo livello
+    if (gameMode === 'campaign') {
+        ctx.save();
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        for (const mark of campaignDeathMarks) {
+            const mx = mark.x - camera.x, my = mark.y - camera.y;
+            ctx.moveTo(mx - 4, my - 4); ctx.lineTo(mx + 4, my + 4);
+            ctx.moveTo(mx + 4, my - 4); ctx.lineTo(mx - 4, my + 4);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+
     for (let c of coins) {
         const cx = c.x - camera.x;
         const cy = c.y - camera.y;
@@ -3783,9 +4005,11 @@ function updateCamera() {
     for (let p of players) {
         if (p.alive) { tx += p.x; ty += p.y; count++; }
     }
-    if (count > 0) { tx /= count; ty /= count; }
-    camera.x += (tx - canvas.width/2 - camera.x) * 0.1;
-    camera.y += (ty - canvas.height/2 - camera.y) * 0.1;
+    // Nessuno vivo: la camera resta sul punto della morte invece di scivolare verso (0,0).
+    if (count > 0) {
+        camera.x += (tx / count - canvas.width/2 - camera.x) * 0.1;
+        camera.y += (ty / count - canvas.height/2 - camera.y) * 0.1;
+    }
     camera.x = Math.max(0, Math.min(camera.x, levelWidth * TILE - canvas.width));
     camera.y = Math.max(0, Math.min(camera.y, levelHeight * TILE - canvas.height));
 
@@ -3835,6 +4059,15 @@ function updateHUD() {
             swStatusEl.className = 'switch-status locked';
         }
 
+        const deathEl = document.getElementById('campDeathStat');
+        const deathText = `💀 ${campaignDeaths}`;
+        if (deathEl.innerText !== deathText) {
+            deathEl.innerText = deathText;
+            // riavvia l'animazione "pop" a ogni nuova morte
+            deathEl.classList.remove('pop');
+            void deathEl.offsetWidth;
+            if (campaignDeaths > 0) deathEl.classList.add('pop');
+        }
         document.getElementById('campGoldStat').innerText = `💰 ${campaignGoldCollected}/${campaignGoldTotal}`;
         document.getElementById('campTimeStat').innerText = `⏱️ ${campaignTimer.toFixed(1)}s`;
 
@@ -3881,7 +4114,7 @@ function updateHUD() {
             </div>
             <div class="score-box">
                 <span>${gameMode === 'rush' ? 'MONETE' : 'UCCISIONI'}: ${p.score}</span>
-                <span>MORTI: ${p.deaths}</span>
+                <span class="death-count">💀 ${p.deaths}</span>
             </div>
         </div>`;
     }
@@ -3903,6 +4136,7 @@ function showCampaignFailedModal() {
     gameState = 'campaignFailed';
     const cLvl = CAMPAIGN_LEVELS[campaignLevelIndex];
     document.getElementById('campaignFailSub').innerText = `Sei morto in "${cLvl ? cLvl.title : 'questo livello'}". Devi attraversare la Porta d'Uscita da vivo per completare il livello!`;
+    document.getElementById('campaignFailDeaths').innerText = `💀 Morti in questo livello: ${campaignDeaths} • Totali: ${totalDeaths}`;
     document.getElementById('campaignFailModal').classList.remove('hidden');
     releaseInputs();
     updateHUD();
@@ -3982,8 +4216,9 @@ function renderCampaignGrid() {
     container.innerHTML = html;
 }
 
-function startCampaignLevel(idx) {
+function startCampaignLevel(idx, retry = false) {
     if (!Number.isInteger(idx) || idx < 0 || idx >= CAMPAIGN_LEVELS.length) return;
+    if (!retry) { campaignDeaths = 0; campaignDeathMarks = []; }
     netManager.close();
     resetMatchUI();
     audio.init();
@@ -4340,7 +4575,9 @@ class NetworkManager {
                 }
                 target.hp = Math.max(0, Math.min(2, target.hp));
                 target.h = target.h === 12 ? 12 : 22;
+                const wasAlive = target.alive;
                 for (const field of PLAYER_SYNC_FLAGS) if (typeof pData[field] === 'boolean') target[field] = pData[field];
+                if (wasAlive && !target.alive) spawnDeathFx(target); // i client non simulano: l'effetto nasce dallo snapshot
                 if (Object.hasOwn(POWERS, pData.powerType)) target.powerType = pData.powerType;
                 if (Object.hasOwn(ENERGY_WAVES, pData.energyWaveType)) target.energyWaveType = pData.energyWaveType;
                 if (['idle', 'run', 'jump', 'fall', 'attack', 'dash', 'slide', 'dive', 'wallslide'].includes(pData.animState)) target.animState = pData.animState;
@@ -4717,7 +4954,7 @@ function startGame() {
 
 function restartGame() {
     if (gameMode === 'campaign') {
-        startCampaignLevel(campaignLevelIndex);
+        startCampaignLevel(campaignLevelIndex, true);
     } else if (netManager.isOnline) {
         if (netManager.isHost) netManager.startOnlineMatchHost();
     } else {
@@ -4738,6 +4975,14 @@ function updateGame() {
         const localPlayer = players.find(player => player.id === netManager.myPlayerId);
         netManager.sendInput(gameState === 'play' && localPlayer ? readPlayerInput(localPlayer) : { x: 0 });
         for (const player of players) player.scarf.update(player.x + player.w/2, player.y + 4, player.facing, player.vx);
+        updateParticles();
+        updateCamera();
+        return;
+    }
+    // Campagna fallita: la simulazione è ferma, ma l'animazione di morte continua (al rallentatore all'inizio).
+    if (gameState === 'campaignFailed') {
+        if (slowMoTimer > 0 && --slowMoTimer % 2) return;
+        updateParticles();
         updateCamera();
         return;
     }
@@ -4771,10 +5016,7 @@ function updateGame() {
             projectiles[i].update();
             if (projectiles[i].life <= 0) projectiles.splice(i, 1);
         }
-        for (let i = particles.length - 1; i >= 0; i--) {
-            particles[i].update();
-            if (particles[i].life <= 0) particles.splice(i, 1);
-        }
+        updateParticles();
         updateCamera();
     }
     if (netManager.isOnline && gameTime % 2 === 0) netManager.broadcastSnapshot();
@@ -4795,7 +5037,16 @@ function loop(timestamp) {
         drawLevel();
         for (const projectile of projectiles) projectile.draw();
         for (const player of players) player.draw();
+        // Particelle additive (bagliore) sui temi scuri
+        ctx.globalCompositeOperation = currentTheme === 'light' ? 'source-over' : 'lighter';
         for (const particle of particles) particle.draw();
+        ctx.globalCompositeOperation = 'source-over';
+        // Vignettatura
+        const vignette = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.height*0.45, canvas.width/2, canvas.height/2, canvas.width*0.75);
+        vignette.addColorStop(0, 'rgba(0,0,0,0)');
+        vignette.addColorStop(1, currentTheme === 'light' ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.6)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         updateHUD();
     }
 }
